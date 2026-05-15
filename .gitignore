@@ -1,0 +1,4 @@
+.DS_Store
+Refernce Resources/transactions_history_final.csv
+node_modules/
+*.log
