@@ -22,6 +22,10 @@ def run_bronze(config: dict) -> None:
     logger.info("=" * 60)
     from src.bronze.ingest_internal import ingest_all
     ingest_all(config)
+    
+    from src.bronze.ingest_poi import scrape_pois
+    logger.info("Running scrape_pois...")
+    scrape_pois(config)
 
 
 def run_silver(config: dict) -> None:
@@ -50,6 +54,10 @@ def run_silver(config: dict) -> None:
     
     logger.info("Running clean_holidays...")
     clean_holidays(config)
+    
+    from src.silver.clean_poi import clean_poi
+    logger.info("Running clean_poi...")
+    clean_poi(config)
 
 
 def run_gold(config: dict) -> None:
@@ -57,8 +65,10 @@ def run_gold(config: dict) -> None:
     logger.info("=" * 60)
     logger.info("STAGE 3: GOLD — Feature Engineering")
     logger.info("=" * 60)
-    # TODO: Wire up gold feature scripts
-    logger.warning("Gold stage not yet implemented.")
+    
+    from src.gold.build_model_input import build_model_input
+    logger.info("Running build_model_input...")
+    build_model_input(config)
 
 
 def run_predict(config: dict) -> None:
