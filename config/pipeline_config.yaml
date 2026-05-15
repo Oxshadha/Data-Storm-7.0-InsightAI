@@ -1,0 +1,178 @@
+# ============================================================
+# Data Storm 7.0 — InsightAI Pipeline Configuration
+# ============================================================
+# All paths, thresholds, and parameters in one place.
+# DO NOT hardcode paths or magic numbers in scripts.
+# ============================================================
+
+project:
+  team_name: "InsightAI"
+  competition: "Data Storm 7.0 — Storming Round"
+  target_month: 1        # January
+  target_year: 2026
+
+# ── Data Paths ──────────────────────────────────────────────
+
+paths:
+  raw_source: "Refernce Resources"
+
+  bronze:
+    root: "data/bronze"
+    transactions: "data/bronze/transactions_history.parquet"
+    outlet_master: "data/bronze/outlet_master.parquet"
+    outlet_coordinates: "data/bronze/outlet_coordinates.parquet"
+    distributor_seasonality: "data/bronze/distributor_seasonality.parquet"
+    holiday_list: "data/bronze/holiday_list.parquet"
+    poi_raw: "data/bronze/poi_raw"
+
+  silver:
+    root: "data/silver"
+    transactions: "data/silver/transactions_clean.parquet"
+    outlet_master: "data/silver/outlet_master_clean.parquet"
+    outlet_coordinates: "data/silver/outlet_coordinates_clean.parquet"
+    distributor_seasonality: "data/silver/distributor_seasonality_clean.parquet"
+    holiday_list: "data/silver/holiday_list_clean.parquet"
+    poi: "data/silver/poi_clean.parquet"
+    rejected_dir: "data/silver/rejected"
+    rejection_manifest: "data/silver/rejected/rejection_manifest.csv"
+
+  gold:
+    root: "data/gold"
+    outlet_features: "data/gold/outlet_features.parquet"
+    censoring_indicators: "data/gold/censoring_indicators.parquet"
+    model_input: "data/gold/model_input.parquet"
+
+  output:
+    predictions: "output/insightai_predictions.csv"
+    report: "output/report"
+
+# ── DQ Check Thresholds ────────────────────────────────────
+
+dq_checks:
+  transactions:
+    # Composite key for duplicate detection
+    duplicate_key:
+      - "Outlet_ID"
+      - "Year"
+      - "Month"
+      - "Distributor_ID"
+      - "SKU_ID"
+      - "Volume_Liters"
+      - "Total_Bill_Value"
+    
+    # Volume range (values outside this are flagged, NOT dropped)
+    volume_min: -10000.0    # Allow negatives for return detection
+    volume_max: 10000.0
+    
+    # Outlier detection: z-score threshold for per-outlet-SKU analysis
+    outlier_zscore_threshold: 3.5
+    
+    # Mandatory non-null columns
+    mandatory_columns:
+      - "Outlet_ID"
+      - "Year"
+      - "Month"
+      - "Distributor_ID"
+      - "SKU_ID"
+      - "Volume_Liters"
+      - "Total_Bill_Value"
+
+  outlet_master:
+    mandatory_columns:
+      - "Outlet_ID"
+      - "Outlet_Type"
+    
+    # Valid standardized values
+    valid_outlet_sizes:
+      - "Small"
+      - "Medium"
+      - "Large"
+      - "Extra Large"
+    
+    valid_outlet_types:
+      - "Hotel"
+      - "Grocery"
+      - "SMMT"
+      - "Pharmacy"
+      - "Kiosk"
+      - "Bakery"
+      - "Eatery"
+    
+    # Typo mapping (detected → corrected)
+    outlet_type_corrections:
+      "Grocry": "Grocery"
+      "Bakry": "Bakery"
+    
+    outlet_size_corrections:
+      "small": "Small"
+
+  outlet_coordinates:
+    # Sri Lanka bounding box for geo-validation
+    latitude_min: 5.9
+    latitude_max: 9.9
+    longitude_min: 79.5
+    longitude_max: 81.9
+
+  distributor_seasonality:
+    valid_seasonality_values:
+      - "Favorable"
+      - "Moderate"
+      - "Un-Favorable"
+
+# ── POI Scraping ───────────────────────────────────────────
+
+poi_scraping:
+  # Radius in meters around each outlet for POI search
+  search_radius_m: 1000
+  
+  # Overpass API endpoint
+  overpass_url: "https://overpass-api.de/api/interpreter"
+  
+  # POI categories to scrape (OSM tags)
+  categories:
+    schools:
+      amenity: "school"
+    hospitals:
+      amenity: "hospital"
+    bus_stops:
+      highway: "bus_stop"
+    places_of_worship:
+      amenity: "place_of_worship"
+    restaurants:
+      amenity: "restaurant"
+    banks:
+      amenity: "bank"
+    supermarkets:
+      shop: "supermarket"
+    fuel_stations:
+      amenity: "fuel"
+  
+  # Rate limiting
+  requests_per_second: 1
+  batch_size: 50
+
+# ── Modeling ───────────────────────────────────────────────
+
+modeling:
+  # Random seed for reproducibility
+  random_seed: 42
+  
+  # Train/validation split (temporal)
+  validation_months:
+    - year: 2025
+      month: 12
+  
+  # Censoring detection thresholds
+  censoring:
+    # Coefficient of variation threshold (low CV = suspiciously flat = likely capped)
+    cv_threshold: 0.15
+    
+    # Consecutive months at same volume threshold
+    plateau_months: 3
+
+# ── Logging ────────────────────────────────────────────────
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s | %(name)-20s | %(levelname)-8s | %(message)s"
+  log_file: "logs/pipeline.log"

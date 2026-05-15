@@ -1,4 +1,41 @@
+# ── System Files ──
 .DS_Store
+*.swp
+*.swo
+*~
+
+# ── Large Data Files (exceed GitHub 100MB limit) ──
 Refernce Resources/transactions_history_final.csv
-node_modules/
-*.log
+
+# ── Generated Data (reproduce via pipeline) ──
+data/bronze/*.parquet
+data/silver/*.parquet
+data/silver/rejected/*.parquet
+data/silver/rejected/rejection_manifest.csv
+data/gold/*.parquet
+data/bronze/poi_raw/*.parquet
+
+# ── Logs ──
+logs/*.log
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+
+# ── Jupyter ──
+.ipynb_checkpoints/
+
+# ── IDE ──
+.vscode/
+.idea/
+
+# ── Output (predictions regenerated, report kept) ──
+# output/insightai_predictions.csv  # Uncomment if you want to exclude
+
+# ── Keep empty dirs ──
+!**/.gitkeep
