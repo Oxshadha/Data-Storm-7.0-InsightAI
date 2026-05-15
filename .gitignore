@@ -6,6 +6,7 @@
 
 # ── Large Data Files (exceed GitHub 100MB limit) ──
 Refernce Resources/transactions_history_final.csv
+data/bronze/transactions_history_final.csv
 
 # ── Generated Data (reproduce via pipeline) ──
 data/bronze/*.parquet
