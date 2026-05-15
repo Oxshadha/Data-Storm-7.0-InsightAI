@@ -29,8 +29,27 @@ def run_silver(config: dict) -> None:
     logger.info("=" * 60)
     logger.info("STAGE 2: SILVER — Forensic Cleaning & DQ Checks")
     logger.info("=" * 60)
-    # TODO: Wire up silver cleaning scripts
-    logger.warning("Silver stage not yet implemented.")
+    
+    from src.silver.clean_outlet_master import clean_outlet_master
+    from src.silver.clean_transactions import clean_transactions
+    from src.silver.clean_coordinates import clean_coordinates
+    from src.silver.clean_seasonality import clean_seasonality
+    from src.silver.clean_holidays import clean_holidays
+    
+    logger.info("Running clean_outlet_master...")
+    clean_outlet_master(config)
+    
+    logger.info("Running clean_transactions...")
+    clean_transactions(config)
+    
+    logger.info("Running clean_coordinates...")
+    clean_coordinates(config)
+    
+    logger.info("Running clean_seasonality...")
+    clean_seasonality(config)
+    
+    logger.info("Running clean_holidays...")
+    clean_holidays(config)
 
 
 def run_gold(config: dict) -> None:
