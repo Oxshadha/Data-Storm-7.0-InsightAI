@@ -105,8 +105,20 @@ def main():
     else:
         for name, fn in STAGES.items():
             fn(config)
+            
+        # Final Step: Sync Documentation & Plots
+        logger.info("=" * 60)
+        logger.info("FINAL STAGE: DOCUMENTATION & VISUALS")
+        logger.info("=" * 60)
+        import subprocess
+        
+        logger.info("Regenerating synchronized Jupyter Notebooks...")
+        subprocess.run([sys.executable, "notebooks/generate_notebooks.py"], check=True)
+        
+        logger.info("Exporting updated technical plots for report...")
+        subprocess.run([sys.executable, "export_plots.py"], check=True)
 
-    logger.info("✅ Pipeline complete.")
+    logger.info("✅ Pipeline complete. All models, notebooks, and plots are synchronized.")
 
 
 if __name__ == "__main__":

@@ -48,14 +48,14 @@ def run_lgbm_model(config: dict | None = None) -> None:
     outlet_static = abt.sort_values(["Year", "Month"]).groupby("Outlet_ID").tail(1).reset_index(drop=True)
     
     # Features to use
-    poi_cols = [c for c in abt.columns if c.startswith("poi_count_")] + ["poi_total_catchment"]
-    catchment_cols = ["Has_Youth_Catchment", "Has_Leisure_Catchment", "Has_Athletic_Catchment"]
+    poi_cols = [c for c in abt.columns if c.startswith("poi_count_")] + ["poi_total_catchment", "poi_driver_catchment", "poi_cannibal_risk"]
+    catchment_cols = ["Has_High_Footfall_Catchment", "Has_Cannibalization_Risk", "Has_Health_Catchment", "Has_Athletic_Catchment", "Has_Youth_Catchment", "Has_Leisure_Catchment"]
     temporal_cols = ["Number_of_Weekends", "Holiday_Count", "Is_Cultural_Month", "Is_High_Season"]
     interaction_cols = [
         "Tuition_Weekend_Surge", 
         "Tourist_Peak_Multiplier", 
         "Sports_Big_Match_Spike", 
-        "Park_Poya_Outing"
+        "Health_Catchment_Spike"
     ]
     
     cat_features = ["Outlet_Type", "Dynamic_Tier"]
@@ -156,7 +156,7 @@ def run_lgbm_model(config: dict | None = None) -> None:
     future_grid["Tuition_Weekend_Surge"] = future_grid["Has_Youth_Catchment"] * future_grid["Number_of_Weekends"]
     future_grid["Tourist_Peak_Multiplier"] = future_grid["Has_Leisure_Catchment"] * future_grid["Is_High_Season"]
     future_grid["Sports_Big_Match_Spike"] = future_grid["Has_Athletic_Catchment"] * (future_grid["Is_Cultural_Month"] * 1.5 + future_grid["Number_of_Weekends"])
-    future_grid["Park_Poya_Outing"] = future_grid["Has_Leisure_Catchment"] * future_grid["Holiday_Count"]
+    future_grid["Health_Catchment_Spike"] = future_grid["Has_Health_Catchment"] * (future_grid["Number_of_Weekends"] + future_grid["Holiday_Count"])
     
     X_test = future_grid[features].copy()
     for c in cat_features:
@@ -173,7 +173,18 @@ def run_lgbm_model(config: dict | None = None) -> None:
     # The models' predictions are allowed to fall below historical max if temporal features dictate.
     
     # ── 4. The Final Output ───────────────────────────────────────────────────
-    final_cols = ["Outlet_ID", "Predicted_Volume_p50", "Predicted_Volume_p75", "Predicted_Volume_p90"]
+    # We apply a Structural Safety Floor: The potential can NEVER be lower than 
+    # what the shop has already historically achieved.
+    historical_max = abt.groupby("Outlet_ID")["Total_Volume"].max().reset_index(name="Historical_Max")
+    future_grid = future_grid.merge(historical_max, on="Outlet_ID", how="left")
+    
+    # Final prediction is the higher of the model's p90 estimate or historical reality
+    future_grid["Maximum_Monthly_Liters"] = np.maximum(
+        future_grid["Historical_Max"], 
+        future_grid["Predicted_Volume_p90"]
+    )
+    
+    final_cols = ["Outlet_ID", "Maximum_Monthly_Liters"]
     final_output = future_grid[final_cols].copy()
     
     out_path = resolve_path(paths["output"]["predictions"])
@@ -183,8 +194,8 @@ def run_lgbm_model(config: dict | None = None) -> None:
     
     logger.info("=" * 60)
     logger.info("🚀 PHASE 5 COMPLETE!")
-    logger.info(f"Total projected network demand for Jan 2026 (p75): {final_output['Predicted_Volume_p75'].sum():,.2f} Liters")
-    logger.info(f"Final predictions saved strictly to: {out_path}")
+    logger.info(f"Total projected network demand for Jan 2026 (p90 Maximum): {final_output['Maximum_Monthly_Liters'].sum():,.2f} Liters")
+    logger.info(f"Final predictions saved strictly to: {out_path} (Format: Outlet_ID, Maximum_Monthly_Liters)")
     logger.info("=" * 60)
 
 

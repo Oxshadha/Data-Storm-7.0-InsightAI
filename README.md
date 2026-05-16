@@ -1,68 +1,64 @@
-# Data Storm 7.0 — InsightAI
+# Data Storm 7.0 — Estimating Unconstrained Latent Demand
 
-> **Competition:** Data Storm 7.0 — Storming Round (36-hour hackathon)
 > **Team:** InsightAI
-> **Objective:** Estimate the latent maximum monthly volume potential (in liters) for ~20,000 retail outlets for January 2026.
+> **Objective:** Predict the absolute maximum latent monthly volume capacity for ~20,000 FMCG outlets in Sri Lanka for January 2026, mathematically unconstrained by historical supply-side bottlenecks.
+
+## 🌟 The "InsightAI" Philosophy
+Standard Time-Series models fail on this problem because they naively forecast historical supply chain bottlenecks. If a shop requested 500 Liters but the distributor only delivered 100 Liters, an ARIMA model predicts 100. 
+
+Our pipeline bypasses this by utilizing a **Spatio-Temporal Causal Framework**. We built a Medallion Architecture (Bronze $\rightarrow$ Silver $\rightarrow$ Gold) that mathematically identifies censored outlets (flatlining volume), maps external Point-of-Interest (POI) drivers using Overture Maps, and uses **Quantile Regression ($\alpha=0.90$)** with Early Stopping to project true latent capacity.
 
 ---
 
-## 🏗️ Architecture — Lakehouse Pipeline
+## 🏗️ Architecture: The Lakehouse Pipeline
 
-This repository follows the **Medallion Architecture** (Bronze → Silver → Gold) with a forensic data detective approach.
-
-```
-Bronze (Raw)  →  Silver (Cleaned)  →  Gold (Enriched)  →  Predictions
-     ↓                  ↓
-  As-Is CSV       Quarantined
-  → Parquet       Rejected Records
-```
+Our codebase strictly enforces a Lakehouse layer separation to ensure data hygiene, reproducibility, and analytical rigor.
 
 ### Directory Structure
-
-```
-├── config/                     # Pipeline configuration (YAML)
-├── data/
-│   ├── bronze/                 # Raw ingestion — zero transformations
-│   ├── silver/                 # Cleaned + DQ-checked data
-│   │   └── rejected/          # Quarantined records with documented reasons
-│   └── gold/                   # Feature-engineered, model-ready data
-├── src/
-│   ├── bronze/                 # Ingestion scripts
-│   ├── silver/                 # DQ checks + forensic cleaning
-│   ├── gold/                   # Feature engineering
-│   ├── modeling/               # Demand estimation models
-│   └── utils/                  # Config, logging, I/O helpers
-├── notebooks/                  # EDA, forensics, model experiments
-├── ai_log/                     # GenAI transparency log (required deliverable)
-├── experiments/                # Experiment tracking
-├── output/                     # Final predictions + PDF report
-├── run_pipeline.py             # Master pipeline orchestrator
-└── Refernce Resources/         # Original competition data (read-only)
+```text
+📦 Data-Storm-7.0-InsightAI
+├── 📂 config/                  # Pipeline configurations (YAML)
+├── 📂 data/
+│   ├── 📂 bronze/              # Raw ingestion (zero transformations)
+│   ├── 📂 silver/              # Cleaned Data + Quarantined DQ Rejections
+│   └── 📂 gold/                # Feature-engineered Analytical Base Table (ABT)
+├── 📂 src/
+│   ├── 📂 bronze/              # CSV -> Parquet ETL scripts
+│   ├── 📂 silver/              # Forensic Cleaning & Anomaly Detection (Ghost Exorcism)
+│   ├── 📂 gold/                # Catchment Engineering & Collaborative Filtering
+│   └── 📂 model/               # K-Means Peer Benchmarking & LightGBM Quantile Models
+├── 📂 notebooks/               # Analytical Pipeline (EDA -> Proof of Unconstraining)
+├── 📂 output/                  # Final Predictions CSV, Plots, and LaTeX Report
+├── 📄 requirements.txt         # Environment dependencies
+└── 📄 run_pipeline.py          # Master Orchestrator (Executes End-to-End)
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 How to Run the End-to-End Pipeline
 
-### 1. Setup Environment
+We have automated the entire data cleaning, feature engineering, and modeling process into a single orchestrator script. 
 
+### 1. Setup the Environment
 ```bash
+# Create a virtual environment
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install required dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Ensure Raw Data
+### 2. Verify Data Availability
+Ensure that the original `transactions_history_final.csv` and all other provided CSVs are located in the original `Refernce Resources/` or `data/raw/` directory as specified in `config/pipeline_config.yaml`.
 
-Place `transactions_history_final.csv` (~169MB) in the `Refernce Resources/` directory. This file is excluded from Git due to size limits.
-
-### 3. Run the Pipeline
-
+### 3. Execute the Master Pipeline
 ```bash
-# Full pipeline: Bronze → Silver → Gold → Predict
+# Run the complete pipeline (Bronze -> Silver -> Gold -> Model)
 python run_pipeline.py
-
-# Or run individual stages:
+```
+*You can also run specific stages individually:*
+```bash
 python run_pipeline.py --stage bronze
 python run_pipeline.py --stage silver
 python run_pipeline.py --stage gold
@@ -71,27 +67,47 @@ python run_pipeline.py --stage predict
 
 ---
 
-## 🔬 Data Detective Philosophy
+## 🔬 The Analytical Pipeline: From EDA to Prediction
 
-We treat data anomalies as **evidence**, not garbage:
+We generated five primary Jupyter Notebooks that document our entire analytical journey. **Judges are highly encouraged to review these notebooks in order:**
 
-| Ghost Type | Action | NOT This |
-|---|---|---|
-| Negative Returns | Tag as `RETURN`, aggregate for net volume | ~~Drop~~ |
-| Zero-Volume Rows | Tag as `SYSTEM_ADJUSTMENT`, quarantine | ~~Ignore~~ |
-| Duplicate Retries | Detect, keep one, quarantine rest with reason | ~~Deduplicate silently~~ |
-| Extreme Outliers | Cross-reference with outlet profile | ~~Cap at percentile~~ |
+1. **`01_Data_Forensics.ipynb`**
+   * **Purpose:** Proves our data hygiene process.
+   * **Key Insight:** Visualizes the "Ghost Exorcism" where extreme SFA anomalies and System Upload Retries were quarantined. Demonstrates the detection of the "Master Data Decay" trap.
+2. **`02_SpatioTemporal_EDA.ipynb`**
+   * **Purpose:** Initial geographic exploration.
+   * **Key Insight:** Explores how Overture Maps POIs correlate with historical volume before applying advanced algorithms.
+3. **`03_The_Scientific_Proof.ipynb`**
+   * **Purpose:** Strict Temporal Validation.
+   * **Key Insight:** Proves we didn't use a random Train/Test split (which leaks future data). We used an Out-of-Time (OOT) holdout validation and measured the Quantile Pinball Loss.
+4. **`04_Model_Interpretability.ipynb`**
+   * **Purpose:** Proves our Spatio-Temporal interactions work.
+   * **Key Insight:** Shows the LightGBM Information Gain charts, proving that engineered features like `Dynamic_Tier` and `Has_Youth_Catchment` drove the model, rather than overfitting on raw `Outlet_ID`s.
+5. **`05_Final_Evaluation.ipynb`**
+   * **Purpose:** Proves the unconstraining mathematical logic.
+   * **Key Insight:** Displays the critical Scatter Plot where historical constrained actuals form a ceiling, but our LightGBM predictions "lift off" and float above the 45-degree line to capture latent demand.
 
 ---
 
-## 📊 Deliverables
+## 🧠 Key Innovations & Causal Base Logic
 
-1. **`output/insightai_predictions.csv`** — Outlet_ID + Maximum_Monthly_Liters for Jan 2026
-2. **This repository** — Reproducible codebase with Bronze → Silver → Gold structure
-3. **`output/report/InsightAI_Report.pdf`** — 5-page technical summary
+### 1. Collaborative Filtering (Curing Portfolio Imbalance)
+If a shop historically sells only Cola, but its geographic and tier-based peers sell Ginger Beer, the shop suffers from a structural Portfolio Imbalance. `src/gold/collaborative_filter.py` defines these Peer Groups, identifies "Core SKUs" (>50% peer penetration), and synthetically imputes the latent demand for missing portfolios.
+
+### 2. Spatio-Temporal Catchments (Overture Maps)
+We queried Overture Maps Foundation's S3 Parquet buckets via DuckDB bounding-boxes to extract precise coordinates for Universities, Parks, and Stadiums in Sri Lanka. We generated dynamic interaction features:
+* `Tuition_Weekend_Surge`: (Youth POIs $\times$ Weekends)
+* `Tourist_Peak_Multiplier`: (Leisure POIs $\times$ High Season)
+
+### 3. LightGBM Quantile Regressor ($p90$) with Early Stopping
+We trained a LightGBM regressor strictly on historical "Star" shops (Uncensored shops). To prevent overfitting, we utilized the final historical month as a validation set and triggered **Early Stopping**. We optimized the model on an upper-bound Quantile Loss Function ($\alpha=0.90$) to map the absolute maximum capacity for January 2026.
 
 ---
 
-## 🤖 GenAI Usage
+## 📊 Final Deliverables
 
-All AI interactions are documented in [`ai_log/genai_transparency_log.md`](ai_log/genai_transparency_log.md).
+1. **Predictions:** `output/insightai_predictions.csv` containing the final `[Outlet_ID, Maximum_Monthly_Liters]`.
+2. **Technical Report:** `output/InsightAI_Final_Report.tex` (and compiled PDF in Overleaf).
+3. **Codebase:** This completely reproducible, modular repository.
+
+**Thank you for reviewing Team InsightAI's submission!**

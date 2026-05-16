@@ -103,8 +103,21 @@ def build_model_input(config: dict | None = None) -> None:
         if not cols: return pd.Series(0, index=df.index)
         return df[cols].sum(axis=1)
 
-    abt["Has_Youth_Catchment"] = (sum_poi(abt, ["school", "university", "college", "education"]) > 0).astype(int)
-    abt["Has_Leisure_Catchment"] = (sum_poi(abt, ["park", "tourist_attraction", "landmark", "beach"]) > 0).astype(int)
+    # High Footfall Drivers (Catchments) - Numerical
+    abt["poi_driver_catchment"] = sum_poi(abt, [
+        "school", "education", "park", "beach", "hospital", 
+        "transport_hub", "stadium", "gym", "leisure", "sports_center", "railway_station"
+    ])
+    abt["Has_High_Footfall_Catchment"] = (abt["poi_driver_catchment"] > 0).astype(int)
+    
+    # Competitive Cannibalization Risks (Supermarkets, Restaurants, Cafes) - Numerical
+    abt["poi_cannibal_risk"] = sum_poi(abt, ["supermarket", "restaurant", "cafe", "convenience_store"])
+    abt["Has_Cannibalization_Risk"] = (abt["poi_cannibal_risk"] > 0).astype(int)
+    
+    # Keep specific ones for interactions
+    abt["Has_Youth_Catchment"] = (sum_poi(abt, ["school", "education"]) > 0).astype(int)
+    abt["Has_Leisure_Catchment"] = (sum_poi(abt, ["park", "beach"]) > 0).astype(int)
+    abt["Has_Health_Catchment"] = (sum_poi(abt, ["hospital"]) > 0).astype(int)
     abt["Has_Athletic_Catchment"] = (sum_poi(abt, ["stadium", "sports_centre", "pitch", "recreation_center"]) > 0).astype(int)
 
     # ── 4. Temporal Features ──────────────────────────────────────────────────
@@ -149,9 +162,9 @@ def build_model_input(config: dict | None = None) -> None:
     # We will use (Is_Cultural_Month * 1.5 + Number_of_Weekends) as the temporal multiplier
     abt["Sports_Big_Match_Spike"] = abt["Has_Athletic_Catchment"] * (abt["Is_Cultural_Month"] * 1.5 + abt["Number_of_Weekends"])
     
-    # 4. The Park/Poya Day Outing
-    # Logic: (Has Park/Leisure POIs) × (Count of Poya Days and Public Holidays)
-    abt["Park_Poya_Outing"] = abt["Has_Leisure_Catchment"] * abt["Holiday_Count"]
+    # 4. The Health/Hospital Pulse
+    # Logic: (Has Health POIs) x (Number of Weekends OR Holidays)
+    abt["Health_Catchment_Spike"] = abt["Has_Health_Catchment"] * (abt["Number_of_Weekends"] + abt["Holiday_Count"])
 
     # ── 6. Censoring Signal Detection (Is_Censored) ───────────────────────────
     logger.info("Computing variance and flagging Censored (flatlining) outlets...")
@@ -169,7 +182,7 @@ def build_model_input(config: dict | None = None) -> None:
         abt["Tuition_Weekend_Surge"] + 
         abt["Tourist_Peak_Multiplier"] + 
         abt["Sports_Big_Match_Spike"] + 
-        abt["Park_Poya_Outing"]
+        abt["Health_Catchment_Spike"]
     )
     
     cv_threshold = config.get("modeling", {}).get("censoring", {}).get("cv_threshold", 0.15)

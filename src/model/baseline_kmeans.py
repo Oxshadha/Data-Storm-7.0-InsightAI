@@ -42,12 +42,16 @@ def run_baseline_model(config: dict | None = None) -> None:
     # We DO NOT cluster on Target (Total_Volume) or Is_Censored.
     feature_cols = [
         "poi_total_catchment",
+        "poi_driver_catchment",
+        "poi_cannibal_risk",
         "Tuition_Weekend_Surge",
         "Tourist_Peak_Multiplier",
         "Sports_Big_Match_Spike",
-        "Park_Poya_Outing",
+        "Health_Catchment_Spike",
         "Number_of_Weekends",
-        "Holiday_Count"
+        "Holiday_Count",
+        "Has_High_Footfall_Catchment",
+        "Has_Cannibalization_Risk"
     ]
     
     # Also add encoded categoricals if helpful, e.g., Outlet_Type or Dynamic_Tier
