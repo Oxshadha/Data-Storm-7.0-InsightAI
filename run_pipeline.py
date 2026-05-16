@@ -54,9 +54,11 @@ def run_gold(config: dict) -> None:
     logger.info("=" * 60)
     
     from src.gold.feature_poi import create_poi_features
+    from src.gold.collaborative_filter import run_collaborative_filtering
     from src.gold.build_model_input import build_model_input
     
     create_poi_features(config)
+    run_collaborative_filtering(config)
     build_model_input(config)
 
 

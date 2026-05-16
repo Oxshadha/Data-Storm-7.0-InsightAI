@@ -43,8 +43,8 @@ def build_model_input(config: dict | None = None) -> None:
     paths = config["paths"]
 
     # ── 1. Load Data ──────────────────────────────────────────────────────────
-    logger.info("Loading Silver tables...")
-    trans_df = read_parquet(paths["silver"]["transactions"])
+    logger.info("Loading Silver & CF tables...")
+    trans_df = read_parquet(paths["gold"]["root"] + "/transactions_cf_enhanced.parquet")
     master_df = read_parquet(paths["silver"]["outlet_master"])
     season_df = read_parquet(paths["silver"]["distributor_seasonality"])
     holiday_df = read_parquet(paths["silver"]["holiday_list"])
@@ -67,6 +67,15 @@ def build_model_input(config: dict | None = None) -> None:
         )
         .reset_index()
     )
+
+    logger.info("Computing RAW variance for Censored logic (before smoothing)...")
+    raw_outlet_stats = (
+        base_grid.groupby("Outlet_ID", observed=True)["Total_Volume"]
+        .agg(["mean", "std"])
+        .reset_index()
+    )
+    raw_outlet_stats["Volume_CV"] = raw_outlet_stats["std"] / raw_outlet_stats["mean"].replace(0, np.nan)
+    raw_outlet_stats["Volume_CV"] = raw_outlet_stats["Volume_CV"].fillna(0)
 
     logger.info("Applying 3-month quarterly smoothing to correct Wholesale Sell-In spikes...")
     # Sort chronologically to ensure rolling works properly
@@ -147,16 +156,8 @@ def build_model_input(config: dict | None = None) -> None:
     # ── 6. Censoring Signal Detection (Is_Censored) ───────────────────────────
     logger.info("Computing variance and flagging Censored (flatlining) outlets...")
     
-    # Calculate volume CV per outlet across its history
-    outlet_stats = (
-        abt.groupby("Outlet_ID", observed=True)["Total_Volume"]
-        .agg(["mean", "std"])
-        .reset_index()
-    )
-    outlet_stats["Volume_CV"] = outlet_stats["std"] / outlet_stats["mean"].replace(0, np.nan)
-    outlet_stats["Volume_CV"] = outlet_stats["Volume_CV"].fillna(0)
-    
-    abt = abt.merge(outlet_stats[["Outlet_ID", "Volume_CV"]], on="Outlet_ID", how="left")
+    # Merge the raw CV computed before smoothing
+    abt = abt.merge(raw_outlet_stats[["Outlet_ID", "Volume_CV"]], on="Outlet_ID", how="left")
     
     # A shop is censored if:
     # It has a strong Spatio-Temporal demand signal (e.g., Tuition Surge > 0)

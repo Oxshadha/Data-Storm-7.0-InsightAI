@@ -2,15 +2,15 @@
 Predictive Modeling — Route 2: Quantile Gradient Boosting (LightGBM)
 
 Implements the predictive heavyweight algorithm using LightGBM.
-Optimizes the pinball loss function (alpha=0.90) to map the non-linear 
-unconstrained demand surface. Predicts specific potential for January 2026.
+Optimizes the pinball loss function across a full quantile surface 
+(alpha=[0.50, 0.75, 0.90]) to map the non-linear unconstrained demand surface.
+Provides specific potential estimates for January 2026 without artificial safety floors.
 
 Steps:
 1. Train on historical uncensored data (Is_Censored == 0).
 2. Generate synthetic grid for January 2026 (incorporating specific Jan holidays, weekends, seasonality).
-3. Predict the 90th percentile capacity for all outlets in Jan 2026.
-4. Apply historical max safety floor.
-5. Export final predictions CSV.
+3. Predict the 50th, 75th, and 90th percentile capacities for all outlets in Jan 2026.
+4. Export final predictions CSV containing the full surface.
 
 Usage:
     python -m src.model.lgbm_quantile
@@ -67,33 +67,65 @@ def run_lgbm_model(config: dict | None = None) -> None:
     logger.info("Preparing Training Data (Uncensored 'Stars' Only)...")
     
     # Filter to strictly uncensored historical rows
-    train_df = abt[abt["Is_Censored"] == 0].copy()
+    full_df = abt[abt["Is_Censored"] == 0].copy()
+    
+    # Sort chronologically for Time-Series Split
+    full_df = full_df.sort_values(["Year", "Month"])
+    
+    # We use the final historical month as the Validation set for Early Stopping
+    last_year = full_df["Year"].max()
+    last_month = full_df[full_df["Year"] == last_year]["Month"].max()
+    val_mask = (full_df["Year"] == last_year) & (full_df["Month"] == last_month)
+    
+    train_df = full_df[~val_mask]
+    val_df = full_df[val_mask]
     
     # Prepare X and y
     X_train = train_df[features].copy()
     y_train = train_df[target]
     
+    X_val = val_df[features].copy()
+    y_val = val_df[target]
+    
     # LightGBM handles categoricals natively, but they need to be type 'category'
     for c in cat_features:
         X_train[c] = X_train[c].astype('category')
+        X_val[c] = X_val[c].astype('category')
         
-    logger.info(f"Training LightGBM on {len(X_train):,} uncensored records with {len(features)} features...")
+    logger.info(f"Training LightGBM on {len(X_train):,} training records and {len(X_val):,} validation records...")
     
-    # Initialize and train the Quantile Regressor
-    model = lgb.LGBMRegressor(
-        objective='quantile',
-        alpha=0.75,  # 75th percentile pinball loss (Upper Quartile)
-        n_estimators=300,
-        learning_rate=0.05,
-        max_depth=7,
-        num_leaves=31,
-        random_state=42,
-        n_jobs=-1,
-        verbose=-1
-    )
+    # We will train 3 separate models for a full Quantile Surface
+    alphas = [0.50, 0.75, 0.90]
+    models = {}
     
-    model.fit(X_train, y_train, categorical_feature=cat_features)
-    logger.info("LightGBM Training Complete.")
+    for alpha in alphas:
+        logger.info(f"Training Quantile Regressor (alpha={alpha})...")
+        model = lgb.LGBMRegressor(
+            objective='quantile',
+            alpha=alpha,
+            n_estimators=300, # Max estimators, early stopping will halt it
+            learning_rate=0.05,
+            max_depth=7,
+            num_leaves=31,
+            random_state=42,
+            n_jobs=-1,
+            verbose=-1
+        )
+        
+        # Train with Early Stopping to prevent overfitting
+        callbacks = [lgb.early_stopping(stopping_rounds=20, verbose=False)]
+        
+        model.fit(
+            X_train, y_train, 
+            eval_set=[(X_val, y_val)], 
+            eval_metric='quantile',
+            categorical_feature=cat_features,
+            callbacks=callbacks
+        )
+        
+        best_iter = model.best_iteration_
+        logger.info(f"Model for alpha {alpha} stopped at iteration {best_iter}.")
+        models[alpha] = model
 
     # ── 3. The Inference Phase (January 2026 Grid) ────────────────────────────
     logger.info("Building synthetic Future Grid for January 2026...")
@@ -106,13 +138,11 @@ def run_lgbm_model(config: dict | None = None) -> None:
     future_grid["Month"] = target_month
     
     # Apply Temporal Triggers for Jan 2026
-    # 1. Seasonality
     season_df = read_parquet(paths["silver"]["distributor_seasonality"])
     future_season = season_df[(season_df["Year"] == target_year) & (season_df["Month"] == target_month)]
     future_grid = future_grid.merge(future_season[["Distributor_ID", "Seasonality_Index"]], on="Distributor_ID", how="left")
     future_grid["Seasonality_Index"] = future_grid["Seasonality_Index"].fillna("Moderate")
     
-    # 2. Holidays
     holiday_df = read_parquet(paths["silver"]["holiday_list"])
     holiday_df["Year"] = pd.to_datetime(holiday_df["Date"]).dt.year
     holiday_df["Month"] = pd.to_datetime(holiday_df["Date"]).dt.month
@@ -123,34 +153,28 @@ def run_lgbm_model(config: dict | None = None) -> None:
     future_grid["Is_Cultural_Month"] = 0  # Jan is not March/April
     future_grid["Is_High_Season"] = (future_grid["Seasonality_Index"] == "Favorable").astype(int)
     
-    # Re-calculate Interactions
     future_grid["Tuition_Weekend_Surge"] = future_grid["Has_Youth_Catchment"] * future_grid["Number_of_Weekends"]
     future_grid["Tourist_Peak_Multiplier"] = future_grid["Has_Leisure_Catchment"] * future_grid["Is_High_Season"]
     future_grid["Sports_Big_Match_Spike"] = future_grid["Has_Athletic_Catchment"] * (future_grid["Is_Cultural_Month"] * 1.5 + future_grid["Number_of_Weekends"])
     future_grid["Park_Poya_Outing"] = future_grid["Has_Leisure_Catchment"] * future_grid["Holiday_Count"]
     
-    # Prepare X_test
     X_test = future_grid[features].copy()
     for c in cat_features:
         X_test[c] = X_test[c].astype('category')
         
-    logger.info("Predicting Latent Demand for January 2026...")
-    future_grid["Predicted_Volume_LGBM"] = model.predict(X_test)
+    logger.info("Predicting Latent Demand Surface for January 2026...")
     
-    # ── 4. The Safety Floor ───────────────────────────────────────────────────
-    logger.info("Applying Historical Safety Floor...")
+    # Predict all quantiles
+    for alpha in alphas:
+        col_name = f"Predicted_Volume_p{int(alpha*100)}"
+        future_grid[col_name] = models[alpha].predict(X_test).round(2)
+        
+    # We removed the Historical Safety Floor to prevent upward statistical bias.
+    # The models' predictions are allowed to fall below historical max if temporal features dictate.
     
-    historical_max = abt.groupby("Outlet_ID")["Total_Volume"].max().reset_index(name="Historical_Max_Volume")
-    future_grid = future_grid.merge(historical_max, on="Outlet_ID", how="left")
-    
-    # Ensure prediction never drops below historical reality
-    future_grid["Maximum_Monthly_Liters"] = np.maximum(
-        future_grid["Predicted_Volume_LGBM"],
-        future_grid["Historical_Max_Volume"]
-    ).round(2)
-    
-    # ── 5. The Final Output ───────────────────────────────────────────────────
-    final_output = future_grid[["Outlet_ID", "Maximum_Monthly_Liters"]].copy()
+    # ── 4. The Final Output ───────────────────────────────────────────────────
+    final_cols = ["Outlet_ID", "Predicted_Volume_p50", "Predicted_Volume_p75", "Predicted_Volume_p90"]
+    final_output = future_grid[final_cols].copy()
     
     out_path = resolve_path(paths["output"]["predictions"])
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -159,7 +183,7 @@ def run_lgbm_model(config: dict | None = None) -> None:
     
     logger.info("=" * 60)
     logger.info("🚀 PHASE 5 COMPLETE!")
-    logger.info(f"Total projected network demand for Jan 2026: {final_output['Maximum_Monthly_Liters'].sum():,.2f} Liters")
+    logger.info(f"Total projected network demand for Jan 2026 (p75): {final_output['Predicted_Volume_p75'].sum():,.2f} Liters")
     logger.info(f"Final predictions saved strictly to: {out_path}")
     logger.info("=" * 60)
 
