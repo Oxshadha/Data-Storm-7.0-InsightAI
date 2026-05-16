@@ -68,6 +68,16 @@ def build_model_input(config: dict | None = None) -> None:
         .reset_index()
     )
 
+    logger.info("Applying 3-month quarterly smoothing to correct Wholesale Sell-In spikes...")
+    # Sort chronologically to ensure rolling works properly
+    base_grid = base_grid.sort_values(["Outlet_ID", "Year", "Month"])
+    
+    # Apply rolling 3-month average to spread demand
+    base_grid["Total_Volume"] = (
+        base_grid.groupby("Outlet_ID")["Total_Volume"]
+        .transform(lambda x: x.rolling(window=3, min_periods=1).mean())
+    )
+
     # ── 3. Merge Master Data & POIs ───────────────────────────────────────────
     logger.info("Merging Master and POI features...")
     # Master
