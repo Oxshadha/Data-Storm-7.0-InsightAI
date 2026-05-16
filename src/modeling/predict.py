@@ -78,7 +78,7 @@ def generate_predictions(config: dict) -> None:
     # Export to the new distinct CSV requested
     out_dir = Path("output")
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / "insightai_final_predictions.csv"
+    out_path = out_dir / "insightai_predictions.csv"
     
     final_output.to_csv(out_path, index=False)
     
