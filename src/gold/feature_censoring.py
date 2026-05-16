@@ -1,4 +1,4 @@
-"""Gold — Censoring indicators."""
+"""Gold — Constraint and Censor Proxy Features."""
 
 import pandas as pd
 import numpy as np
@@ -7,32 +7,46 @@ from src.utils.logger import get_logger
 logger = get_logger("gold.feature_censoring")
 
 def build_censoring_features(df: pd.DataFrame, config: dict) -> pd.DataFrame:
-    """
-    Identifies outlets that are likely constrained based on historical variance and volume drops.
-    Expects df to contain 'cv_volume', 'active_months', 'peak_volume', 'Outlet_Type', 'Outlet_Size', 'Distributor_ID'.
-    """
-    logger.info("Building censoring features...")
-    cens_df = df[["Outlet_ID"]].copy()
+    """Build analytical indicators that an outlet might be operating under constraints."""
+    logger.info("Building Constraint/Censor features...")
     
-    cv_thresh = config.get("modeling", {}).get("censoring", {}).get("cv_threshold", 0.15)
+    cens = df[["Outlet_ID"]].copy()
     
-    # Flag 1: Plateau Flag (Very low variance implies a strict delivery cap)
-    cens_df["Is_Plateaued"] = np.where((df["cv_volume"] < cv_thresh) & (df["active_months"] >= 3), 1, 0)
+    # 1. Plateau Score & Low Variance Flag
+    # High plateau score implies variance is suspiciously low for an FMCG retail environment
+    cv = df["volatility_cv"].fillna(1.0)
+    cens["plateau_score"] = np.exp(-cv * 5)  # transforms low CV to high score in [0,1]
+    cens["low_variance_flag"] = (cv < 0.15).astype(int)
     
-    # Peer Group Definition
-    peer_group_90th = df.groupby(["Outlet_Type", "Outlet_Size", "Distributor_ID"])["peak_volume"].transform(lambda x: x.quantile(0.90))
-    df["Peer_Group_90th_Vol"] = peer_group_90th
+    # 2. Operational Anomalies
+    cens["high_return_anomaly"] = (df["return_ratio"].fillna(0) > 0.05).astype(int)
+    cens["stockout_proxy_score"] = df["zero_volume_ratio"].fillna(0)
     
-    # Flag 2: Underperforming vs Peers
-    cens_df["Is_Underperforming_Peer"] = np.where(df["peak_volume"] < (0.5 * df["Peer_Group_90th_Vol"]), 1, 0)
-    
-    # Flag 3: High return ratio
-    if "return_ratio" in df.columns:
-        cens_df["is_high_return_censored"] = (df["return_ratio"] > 0.05).astype(int)
+    # 3. High POI / Low Sales Mismatch
+    # Identifies outlets in top 20% of POI gravity but bottom 50% of volume (chronically underperforming their location)
+    if "poi_gravity_score" in df.columns:
+        poi_p80 = df["poi_gravity_score"].quantile(0.80)
+        vol_p50 = df["total_volume"].quantile(0.50)
+        cens["high_poi_low_sales_mismatch"] = ((df["poi_gravity_score"] >= poi_p80) & (df["total_volume"] <= vol_p50)).astype(int)
+    else:
+        cens["high_poi_low_sales_mismatch"] = 0
         
-    # Flag 4: Stockout proxy
-    if "zero_ratio" in df.columns:
-        cens_df["is_stockout_censored"] = (df["zero_ratio"] > 0.05).astype(int)
+    # 4. Low Cooler / High Peer Mismatch
+    # Identifies outlets that are massively over-indexing on their cooler capacity compared to peers
+    if "cooler_efficiency_percentile" in df.columns:
+        cens["low_cooler_high_peer_mismatch"] = (df["cooler_efficiency_percentile"] > 0.90).astype(int)
+    else:
+        cens["low_cooler_high_peer_mismatch"] = 0
         
-    logger.info("Finished censoring features.")
-    return cens_df
+    # 5. Sudden Sales Drop
+    # Detects recent severe constraint (e.g., credit lock or delivery stop)
+    if "recent_3m_avg" in df.columns and "recent_12m_avg" in df.columns:
+        recent_3 = df["recent_3m_avg"].fillna(0)
+        recent_12 = df["recent_12m_avg"].fillna(0)
+        drop_ratio = (recent_12 - recent_3) / (recent_12 + 1e-6)
+        cens["sudden_sales_drop"] = (drop_ratio > 0.30).astype(int)
+    else:
+        cens["sudden_sales_drop"] = 0
+        
+    logger.info("Finished Constraint/Censor features.")
+    return cens

@@ -24,6 +24,7 @@ folium>=0.14.0            # Map visualization
 scipy>=1.11.0
 statsmodels>=0.14.0       # Tobit, censored regression
 scikit-learn>=1.3.0
+lightgbm>=4.1.0           # Quantile Regression
 
 # ── Notebooks ──
 jupyter>=1.0.0
