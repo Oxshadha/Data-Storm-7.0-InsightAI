@@ -17,6 +17,7 @@
 | 5 | 2026-05-16 00:20 | Gold Layer | Claude (Antigravity) | POI scraping and gold features | "Implement bulk POI scraping using bounding box, build model input combining POI KDTree, transactions, and censoring logic" | ✅ Adapted | Verified 26,170 POIs downloaded, KDTree counts accurate, pipeline produced `model_input.parquet` |
 | 6 | 2026-05-16 00:35 | Predict Layer | Claude (Antigravity) | Latent potential estimation logic | "Create an expert rule-based demand estimation using peer group 90th percentile and historical peak volume adjusted for seasonality" | ✅ Adapted | Checked calculation logic and successfully generated 20,000 predictions in `insightai_predictions.csv` |
 | 7 | 2026-05-16 10:00 | Visualization & Modeling | Claude (Antigravity) | Generate EDA and Model Training Notebooks | "Create a Jupyter Notebook to visualize data anomalies and step through the demand estimation model mathematically" | ✅ Adapted | Generated and reviewed visualizations for quarantined records and censoring thresholds |
+| 8 | 2026-05-16 14:00 | Machine Learning | Claude (Antigravity) | Final Tri-Model Ensemble Architecture | "Implement ML-based Tri-Model Ensemble (XGBoost AFT, LGBM Quantile, Peer) replacing rule-based heuristics" | ✅ Adapted | Validated mathematically via OOF backtesting; confirmed Guardrails successfully capped extreme extrapolations |
 
 ---
 

@@ -9,6 +9,8 @@
 | # | Date | Approach | Description | Metrics | Notes |
 |---|------|----------|-------------|---------|-------|
 | 0 | 2026-05-15 | Phase 0 setup validation | Verified source data availability, Git ignore rules for large raw files, and executed Bronze ingestion from `Refernce Resources/` to `data/bronze/*.parquet`. | Bronze row counts: transactions 2,376,389; outlet master 20,000; coordinates 20,000; seasonality 360; holidays 349. | `python3 run_pipeline.py --stage bronze` completed successfully. Generated Parquet outputs and logs are reproducible and ignored by Git. |
+| 1 | 2026-05-16 | Try 1: Rule-Based Heuristics | Applied hardcoded seasonality and historical peak multipliers to estimate uncapped potential. | Generated 20k predictions. | Rejected: Heuristics suffer from right-censoring selection bias and don't mathematically account for infinite headroom. |
+| 2 | 2026-05-16 | Try 2: Tri-Model Ensemble | XGBoost AFT (Survival), LGBM Quantile Regressor, and Feature-Space Peer bounds blended via Ridge. | Projected total network Jan 2026 demand: 124,498,487.77 Liters. | Accepted: AFT models true unbounded potential; LGBM learns 95th percentile envelope. Guardrails caught 143 extreme anomalies. |
 
 ---
 
