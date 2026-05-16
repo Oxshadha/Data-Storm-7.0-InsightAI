@@ -90,7 +90,11 @@ def create_poi_features(config: dict | None = None) -> None:
     poi_features.columns = ["Outlet_ID"] + [f"poi_count_{c}" for c in poi_cols]
 
     # Merge back to ensure all outlets are present (even those with 0 POIs)
-    final_features = coords_df[["Outlet_ID"]].merge(poi_features, on="Outlet_ID", how="left").fillna(0)
+    final_features = coords_df[["Outlet_ID"]].merge(poi_features, on="Outlet_ID", how="left")
+    
+    # Fill NaN for all numeric POI count columns
+    poi_cols = [c for c in final_features.columns if c != "Outlet_ID"]
+    final_features[poi_cols] = final_features[poi_cols].fillna(0)
     
     # Cast count columns to int
     count_cols = [c for c in final_features.columns if c.startswith("poi_count_")]

@@ -66,11 +66,9 @@ def run_baseline_model(config: dict | None = None) -> None:
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(abt_encoded)
 
-    # 4. Run K-Means
-    # Given 450k rows, maybe 50 clusters gives tight enough peer groups
-    n_clusters = 50
-    logger.info(f"Running K-Means with {n_clusters} clusters (this may take a moment)...")
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+    # 4. K-Means Clustering
+    logger.info("Running K-Means with 30 clusters (this may take a moment)...")
+    kmeans = KMeans(n_clusters=30, random_state=42, n_init=10)
     abt["Cluster_ID"] = kmeans.fit_predict(X_scaled)
     
     # 5. Calculate 90th Percentile per Cluster on UNCENSORED shops

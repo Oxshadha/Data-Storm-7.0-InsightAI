@@ -82,7 +82,7 @@ def run_lgbm_model(config: dict | None = None) -> None:
     # Initialize and train the Quantile Regressor
     model = lgb.LGBMRegressor(
         objective='quantile',
-        alpha=0.90,  # 90th percentile pinball loss
+        alpha=0.75,  # 75th percentile pinball loss (Upper Quartile)
         n_estimators=300,
         learning_rate=0.05,
         max_depth=7,
