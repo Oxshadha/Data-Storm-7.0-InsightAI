@@ -103,14 +103,21 @@
 
 ---
 
-## Phase 5: Modeling — Demand Estimation 🔴
-**Date:** —
-**Status:** Not started
+## Phase 5: Predictive Modeling (Demand Estimation) 🟡
+**Date:** 2026-05-16
+**Status:** Baseline Completed
+
+### What was done:
+- [x] **The Spatial Heuristic (K-Means Baseline)**:
+  - Standardized the 38-dimensional feature space.
+  - Ran K-Means clustering ($K=50$) to group outlets into behavioral peer groups based on spatio-temporal features.
+  - Calculated the 90th percentile `Total_Volume` for the *uncensored* shops in each cluster.
+  - Projected this ceiling onto the *censored* shops (`Predicted = max(Actual, Cluster_P90)`).
+  - Saved predictions to `output/insightai_predictions.csv` and ABT to `model_baseline_output.parquet`.
 
 ### TODO:
-- [ ] Censoring detection (identify constrained outlets)
-- [ ] Implement demand estimation (Tobit / Quantile / Bayesian)
-- [ ] Generate `insightai_predictions.csv`
+- [ ] Route 2: Train LightGBM Quantile Regressor on unconstrained demand.
+- [ ] Ensemble/Compare results.
 
 ---
 

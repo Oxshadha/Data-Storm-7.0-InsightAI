@@ -65,8 +65,9 @@ def run_predict(config: dict) -> None:
     logger.info("=" * 60)
     logger.info("STAGE 4: PREDICT — Demand Estimation")
     logger.info("=" * 60)
-    # TODO: Wire up modeling scripts
-    logger.warning("Predict stage not yet implemented.")
+    
+    from src.model.baseline_kmeans import run_baseline_model
+    run_baseline_model(config)
 
 
 STAGES = {

@@ -137,19 +137,20 @@ def build_model_input(config: dict | None = None) -> None:
     # ── 6. Censoring Signal Detection (Is_Censored) ───────────────────────────
     logger.info("Computing variance and flagging Censored (flatlining) outlets...")
     
-    # Calculate volume variance per outlet across its history
-    outlet_variance = (
+    # Calculate volume CV per outlet across its history
+    outlet_stats = (
         abt.groupby("Outlet_ID", observed=True)["Total_Volume"]
-        .var()
-        .fillna(0)
-        .reset_index(name="Volume_Variance")
+        .agg(["mean", "std"])
+        .reset_index()
     )
+    outlet_stats["Volume_CV"] = outlet_stats["std"] / outlet_stats["mean"].replace(0, np.nan)
+    outlet_stats["Volume_CV"] = outlet_stats["Volume_CV"].fillna(0)
     
-    abt = abt.merge(outlet_variance, on="Outlet_ID", how="left")
+    abt = abt.merge(outlet_stats[["Outlet_ID", "Volume_CV"]], on="Outlet_ID", how="left")
     
     # A shop is censored if:
     # It has a strong Spatio-Temporal demand signal (e.g., Tuition Surge > 0)
-    # AND its volume variance is effectively 0 (meaning it flatlined, hitting a system constraint limit)
+    # AND its volume CV is very low (meaning it flatlined, hitting a system constraint limit)
     # AND it has non-zero volume
     
     # We look at the sum of interaction scores
@@ -160,7 +161,8 @@ def build_model_input(config: dict | None = None) -> None:
         abt["Park_Poya_Outing"]
     )
     
-    is_flatlined = (abt["Volume_Variance"] < 1.0) & (abt["Total_Volume"] > 0)
+    cv_threshold = config.get("modeling", {}).get("censoring", {}).get("cv_threshold", 0.15)
+    is_flatlined = (abt["Volume_CV"] < cv_threshold) & (abt["Total_Volume"] > 0)
     has_high_demand_signal = abt["Total_Interaction_Score"] > 0
     
     abt["Is_Censored"] = (is_flatlined & has_high_demand_signal).astype(int)
