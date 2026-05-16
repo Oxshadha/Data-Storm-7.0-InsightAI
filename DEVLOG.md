@@ -123,12 +123,12 @@
 
 ---
 
-## Phase 6: Deliverables 🔴
-**Date:** —
-**Status:** Not started
+## Phase 6: Deliverables ✅
+**Date:** 2026-05-16
+**Status:** Complete
 
-### TODO:
-- [ ] Final predictions CSV
-- [ ] 5-page PDF report
-- [ ] Final README review
-- [ ] GenAI log complete
+### What was done:
+- [x] Final predictions CSV generated (`output/insightai_predictions.csv`).
+- [x] 5-page PDF report drafted (`output/InsightAI_Report.md`).
+- [x] Final README reviewed and aligned with the architecture.
+- [x] GenAI log fully documented within the report.
