@@ -7,14 +7,15 @@ notebook = {
             "cell_type": "markdown",
             "metadata": {},
             "source": [
-                "# Latent Potential Demand Estimation\n",
+                "# Latent Potential Demand Estimation: Tri-Model Ensemble\n",
                 "\n",
-                "In this notebook, we walk through the methodology of estimating the latent maximum monthly volume potential for the month of January 2026. Since we do not have a true 'target variable' (ground truth), we approach this as a **left-censored demand problem**.\n",
+                "In this notebook, we walk through the final ML architecture used to estimate the latent maximum monthly volume potential for January 2026. Because observed sales are constrained (stockouts, credit caps, cooler limits), this is a **right-censored demand problem**.\n",
                 "\n",
-                "## Methodology\n",
-                "1. **Load Gold Features**: We use the pre-aggregated `model_input.parquet` which contains our POI data, historical transactions, and censoring flags.\n",
-                "2. **Censoring Detection**: We identify outlets that hit a 'plateau' (very low variance, capped deliveries) or had high stockout/return ratios.\n",
-                "3. **Peer Group Quantile Uplift**: For constrained outlets, we override their historical volume with the **90th percentile** of their peer group (same Size, Type, and Distributor)."
+                "## The Tri-Model Meta Ensemble\n",
+                "1. **Model A (XGBoost AFT):** Uses survival analysis (`objective='survival:aft'`) to learn latent headroom by placing dynamically calibrated upper bounds on unconstrained outlets.\n",
+                "2. **Model B (LightGBM Quantile):** Learns the 95th percentile upper envelope (`alpha=0.95`), using probability-weighted training to down-weight censored records.\n",
+                "3. **Model C (Peer Benchmark):** Calculates historical 95th percentile capacity within precise feature-space macro-clusters.\n",
+                "4. **Meta-Blender & Guardrails:** A Ridge regressor blends the models, and strict business guardrails prevent extreme runaway extrapolations."
             ]
         },
         {
@@ -27,21 +28,23 @@ notebook = {
                 "import numpy as np\n",
                 "import matplotlib.pyplot as plt\n",
                 "import seaborn as sns\n",
+                "import warnings\n",
+                "warnings.filterwarnings('ignore')\n",
                 "\n",
                 "plt.style.use('seaborn-v0_8-whitegrid')\n",
                 "\n",
-                "# Load the Gold data\n",
+                "# Load the Final Gold model input\n",
                 "df = pd.read_parquet('../data/gold/model_input.parquet')\n",
-                "print(f'Loaded {len(df)} outlets for modeling.')\n",
-                "df.head()"
+                "print(f'Loaded {len(df)} outlets with {df.shape[1]} engineered features.')\n",
+                "df[['Outlet_ID', 'total_volume', 'censor_probability', 'poi_gravity_score', 'cooler_efficiency_percentile']].head()"
             ]
         },
         {
             "cell_type": "markdown",
             "metadata": {},
             "source": [
-                "## 1. Visualizing the Censoring Problem\n",
-                "Outlets with extremely low Coefficient of Variation (CV) are suspicious. In the FMCG sector, perfectly flat sales indicate an artificial cap (like a rigid credit limit or strict delivery allocation), not true demand."
+                "## 1. The Censor Probability Engine\n",
+                "We calculate a continuous `censor_probability` ∈ [0,1] using a hybrid heuristic + KMeans approach. This captures constraints like flat volume (plateau), high return ratios, and stockout proxies."
             ]
         },
         {
@@ -51,10 +54,11 @@ notebook = {
             "outputs": [],
             "source": [
                 "plt.figure(figsize=(10, 5))\n",
-                "sns.histplot(df['cv_volume'], bins=50, kde=True, color='purple')\n",
-                "plt.axvline(0.15, color='red', linestyle='--', label='Censoring Threshold (CV < 0.15)')\n",
-                "plt.title('Distribution of Volume Variance (CV)')\n",
-                "plt.xlabel('Coefficient of Variation')\n",
+                "sns.histplot(df['censor_probability'], bins=40, color='crimson', kde=True)\n",
+                "plt.title('Distribution of Outlet Censor Probability')\n",
+                "plt.xlabel('Probability of being constrained (Censor Probability)')\n",
+                "plt.ylabel('Number of Outlets')\n",
+                "plt.axvline(0.65, color='black', linestyle='--', label='AFT Strict Bound Threshold (>0.65)')\n",
                 "plt.legend()\n",
                 "plt.show()"
             ]
@@ -63,8 +67,8 @@ notebook = {
             "cell_type": "markdown",
             "metadata": {},
             "source": [
-                "## 2. Peer Group Analysis\n",
-                "To estimate what a constrained outlet *could* have sold, we group them by similar characteristics: `Type`, `Size`, and `Distributor`."
+                "## 2. Meta-Ensemble Weights & Predictions\n",
+                "We trained the Tri-Model ensemble and blended it using Ridge Regression. Let's load the final generated predictions to see how the guardrails performed."
             ]
         },
         {
@@ -73,19 +77,22 @@ notebook = {
             "metadata": {},
             "outputs": [],
             "source": [
-                "peer_groups = df.groupby(['Outlet_Size_Score', 'Distributor_ID'])['peak_volume'].agg(['mean', 'median', lambda x: np.percentile(x, 90)])\n",
-                "peer_groups.rename(columns={'<lambda_0>': '90th_Percentile'}, inplace=True)\n",
-                "peer_groups.head(10)"
+                "preds = pd.read_csv('../output/insightai_final_predictions.csv')\n",
+                "merged = df.merge(preds, on='Outlet_ID')\n",
+                "\n",
+                "print(f\"Total Observed Historical Volume: {merged['total_volume'].sum():,.2f} L\")\n",
+                "print(f\"Total Projected Network Potential (Jan 2026): {merged['Maximum_Monthly_Liters'].sum():,.2f} L\")\n",
+                "\n",
+                "uplift = (merged['Maximum_Monthly_Liters'].sum() / merged['total_volume'].sum()) - 1\n",
+                "print(f\"Network-wide Demand Uplift (Uncapped): {uplift*100:.1f}%\")"
             ]
         },
         {
             "cell_type": "markdown",
             "metadata": {},
             "source": [
-                "## 3. Estimating Latent Potential\n",
-                "We calculate the estimated potential as follows:\n",
-                "- **Unconstrained (Normal):** Base estimate = Recent 3-month average + Seasonality impact.\n",
-                "- **Constrained (Censored):** Potential = Max(Base, Peak Volume, Peer Group 90th Percentile)."
+                "### Guardrails in Action\n",
+                "The business guardrails ensure our predictions don't break the laws of physics. The prediction must be $\\ge$ historical robust stable floor, and $\\le$ 1.5x the extreme peer benchmark."
             ]
         },
         {
@@ -94,64 +101,14 @@ notebook = {
             "metadata": {},
             "outputs": [],
             "source": [
-                "# Base Estimate (Recent 3m avg adjusted for January seasonality)\n",
-                "seas_adj = 1.0 + (df['Jan_Seasonality_Score'].fillna(0) * 0.1)\n",
-                "base_est = df['recent_3m_avg'] * seas_adj\n",
-                "\n",
-                "# Peer Group 90th Percentile Ceiling\n",
-                "peer_est = df['Peer_Group_90th_Vol'].fillna(base_est)\n",
-                "peak_est = df['peak_volume'].fillna(base_est)\n",
-                "\n",
-                "# Censoring Condition\n",
-                "is_censored = (df['Is_Plateaued'] == 1) | (df['is_stockout_censored'] == 1) | (df['is_high_return_censored'] == 1)\n",
-                "\n",
-                "df['Latent_Potential'] = np.where(\n",
-                "    is_censored,\n",
-                "    np.maximum.reduce([base_est * 1.1, peer_est, peak_est * 1.05]),\n",
-                "    np.maximum.reduce([base_est, peak_est * 0.9])\n",
-                ")\n",
-                "\n",
-                "# Global Market Growth Factor for 2026\n",
-                "df['Latent_Potential'] = df['Latent_Potential'] * 1.05\n",
-                "\n",
-                "print(f\"Average Latent Potential: {df['Latent_Potential'].mean():.2f} L\")\n",
-                "print(f\"Average Historical Peak: {df['peak_volume'].mean():.2f} L\")"
-            ]
-        },
-        {
-            "cell_type": "markdown",
-            "metadata": {},
-            "source": [
-                "### Distribution Shift (Observed vs Potential)\n",
-                "Notice how the Latent Potential distribution shifts slightly to the right, reflecting the uncapping of constrained demand."
-            ]
-        },
-        {
-            "cell_type": "code",
-            "execution_count": None,
-            "metadata": {},
-            "outputs": [],
-            "source": [
+                "# Let's visualize the shift from observed historical to the model's true latent potential\n",
                 "plt.figure(figsize=(10, 5))\n",
-                "sns.kdeplot(df['peak_volume'].clip(upper=300), label='Historical Peak Volume', fill=True)\n",
-                "sns.kdeplot(df['Latent_Potential'].clip(upper=300), label='Latent Potential (Jan 2026)', fill=True)\n",
-                "plt.title('Demand Distribution: Observed Peak vs. Latent Potential')\n",
-                "plt.xlabel('Volume (Liters) - Clipped at 300L for visualization')\n",
+                "sns.kdeplot(merged['total_volume'].clip(upper=400), label='Observed Historical Volume', fill=True, color='grey')\n",
+                "sns.kdeplot(merged['Maximum_Monthly_Liters'].clip(upper=400), label='Predicted Latent Potential (Ensemble)', fill=True, color='blue')\n",
+                "plt.title('Demand Distribution: Observed vs. Tri-Model Latent Potential')\n",
+                "plt.xlabel('Volume (Liters) - Clipped at 400L for visualization')\n",
                 "plt.legend()\n",
                 "plt.show()"
-            ]
-        },
-        {
-            "cell_type": "code",
-            "execution_count": None,
-            "metadata": {},
-            "outputs": [],
-            "source": [
-                "# Prepare final output\n",
-                "output = df[['Outlet_ID', 'Latent_Potential']].copy()\n",
-                "output['Latent_Potential'] = output['Latent_Potential'].round(2)\n",
-                "output.to_csv('../output/insightai_predictions.csv', index=False)\n",
-                "print(\"Saved final predictions to output/insightai_predictions.csv\")"
             ]
         }
     ],
@@ -162,10 +119,7 @@ notebook = {
             "name": "python3"
         },
         "language_info": {
-            "codemirror_mode": {
-                "name": "ipython",
-                "version": 3
-            },
+            "codemirror_mode": {"name": "ipython", "version": 3},
             "file_extension": ".py",
             "mimetype": "text/x-python",
             "name": "python",
@@ -178,9 +132,16 @@ notebook = {
     "nbformat_minor": 4
 }
 
-out_path = Path("notebooks/Model_Training_Walkthrough.ipynb")
+# Save new notebook
+out_path = Path("notebooks/TriModel_Ensemble_Walkthrough.ipynb")
 out_path.parent.mkdir(parents=True, exist_ok=True)
 with open(out_path, "w") as f:
     json.dump(notebook, f, indent=2)
 
-print("Notebook generated.")
+print(f"✅ Generated new ML Architecture Notebook: {out_path}")
+
+# Remove old deprecated notebook
+old_path = Path("notebooks/Model_Training_Walkthrough.ipynb")
+if old_path.exists():
+    old_path.unlink()
+    print(f"🗑️ Deleted deprecated notebook: {old_path}")
