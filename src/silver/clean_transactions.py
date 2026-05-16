@@ -55,6 +55,10 @@ def clean_transactions(config: dict) -> None:
     # Drop duplicates
     df = df.drop_duplicates(subset=dup_keys, keep="first")
     
+    # Add flags
+    df["Is_Return"] = (df["Volume_Liters"] < 0).astype(int)
+    df["Is_Zero"] = (df["Volume_Liters"] == 0).astype(int)
+    
     qm.flush()
     
     # Write to silver
