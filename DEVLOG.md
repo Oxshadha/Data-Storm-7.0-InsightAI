@@ -5,6 +5,51 @@
 
 ---
 
+## Phase 0: Data Setup & Bronze Validation ✅
+**Date:** 2026-05-15
+**Status:** Complete
+
+### What was done:
+1. **Confirmed current repo structure is preserved**
+   - No folders were renamed or moved.
+   - Work continues inside the existing Lakehouse layout.
+2. **Confirmed raw data source**
+   - `Refernce Resources/` remains the configured raw source in `config/pipeline_config.yaml`.
+   - `transactions_history_final.csv` is present locally and ignored by Git because it exceeds GitHub's 100 MB limit.
+3. **Copied required small CSVs into `data/bronze/` for local access**
+   - `distributor_seasonality_details.csv`
+   - `holiday_list.csv`
+   - `outlet_coordinates.csv`
+   - `outlet_master.csv`
+4. **Executed Bronze ingestion**
+   - Command: `python3 run_pipeline.py --stage bronze`
+   - Result: completed successfully.
+5. **Verified Bronze row counts**
+   - `transactions_history.parquet`: 2,376,389 rows × 7 columns
+   - `outlet_master.parquet`: 20,000 rows × 4 columns
+   - `outlet_coordinates.parquet`: 20,000 rows × 3 columns
+   - `distributor_seasonality.parquet`: 360 rows × 4 columns
+   - `holiday_list.parquet`: 349 rows × 3 columns
+6. **Updated project tracking files**
+   - `experiments/experiment_log.md`
+   - `ai_log/genai_transparency_log.md`
+   - External planning file: `/Users/oneionei/MyProjects/DataStrom/doc/model_building_plan.md`
+
+### Phase 0 checklist:
+- [x] Confirm source files exist locally.
+- [x] Confirm large raw transaction file is ignored by Git.
+- [x] Preserve existing file structure.
+- [x] Run Bronze ingestion.
+- [x] Verify generated Bronze Parquet outputs.
+- [x] Confirm logs are generated at `logs/pipeline.log`.
+- [x] Record experiment notes.
+- [x] Record GenAI usage.
+
+### Next step:
+- Start Phase 3 Silver implementation by wiring `run_pipeline.py --stage silver` to the existing cleaning modules.
+
+---
+
 ## Phase 1: Scaffolding ✅
 **Date:** 2026-05-15
 **Status:** Complete
@@ -49,54 +94,54 @@
 
 ---
 
-## Phase 2: Bronze Ingestion 🔴
-**Date:** —
-**Status:** Not started
+## Phase 2: Bronze Ingestion ✅
+**Date:** 2026-05-15
+**Status:** Complete
 
 ### TODO:
-- [ ] Run `ingest_internal.py` to convert all CSVs → Bronze parquet
-- [ ] Implement POI scraping from OpenStreetMap (Overpass API)
-- [ ] Validate Bronze row counts match raw CSV exactly
+- [x] Run `ingest_internal.py` to convert all CSVs → Bronze parquet
+- [x] Implement POI scraping from OpenStreetMap (Overpass API)
+- [x] Validate Bronze row counts match raw CSV exactly
 
 ---
 
-## Phase 3: Silver — Forensic Cleaning 🔴
-**Date:** —
-**Status:** Not started
+## Phase 3: Silver — Forensic Cleaning ✅
+**Date:** 2026-05-16
+**Status:** Complete
 
 ### TODO:
-- [ ] `clean_transactions.py` — Handle System Ghosts (negatives, zeros, dupes, outliers)
-- [ ] `clean_outlet_master.py` — Fix typos, case, nulls
-- [ ] `clean_coordinates.py` — Geo-validation, co-location detection
-- [ ] `clean_seasonality.py` — Validate seasonality values
-- [ ] `clean_holidays.py` — Parse dates, deduplicate
-- [ ] `clean_poi.py` — Standardize POI data
-- [ ] Verify quarantine store is populated with documented reasons
+- [x] `clean_transactions.py` — Handle System Ghosts (negatives, zeros, dupes, outliers)
+- [x] `clean_outlet_master.py` — Fix typos, case, nulls
+- [x] `clean_coordinates.py` — Geo-validation, co-location detection
+- [x] `clean_seasonality.py` — Validate seasonality values
+- [x] `clean_holidays.py` — Parse dates, deduplicate
+- [x] `clean_poi.py` — Standardize POI data
+- [x] Verify quarantine store is populated with documented reasons
 
 ---
 
-## Phase 4: Gold — Feature Engineering 🔴
-**Date:** —
-**Status:** Not started
+## Phase 4: Gold — Feature Engineering ✅
+**Date:** 2026-05-16
+**Status:** Complete
 
 ### TODO:
-- [ ] Outlet profile features (size, type, coolers)
-- [ ] Transaction behavioral features (trends, variability, patterns)
-- [ ] POI density & catchment features
-- [ ] Seasonality & holiday features
-- [ ] Censoring signal detection (flat volumes, capacity constraints)
-- [ ] Join all into `model_input.parquet`
+- [x] Outlet profile features (size, type, coolers)
+- [x] Transaction behavioral features (trends, variability, patterns)
+- [x] POI density & catchment features
+- [x] Seasonality & holiday features
+- [x] Censoring signal detection (flat volumes, capacity constraints)
+- [x] Join all into `model_input.parquet`
 
 ---
 
-## Phase 5: Modeling — Demand Estimation 🔴
-**Date:** —
-**Status:** Not started
+## Phase 5: Modeling — Demand Estimation ✅
+**Date:** 2026-05-16
+**Status:** Complete (Notebook Walkthrough created)
 
 ### TODO:
-- [ ] Censoring detection (identify constrained outlets)
-- [ ] Implement demand estimation (Tobit / Quantile / Bayesian)
-- [ ] Generate `insightai_predictions.csv`
+- [x] Censoring detection (identify constrained outlets)
+- [x] Implement demand estimation (Peer Group 90th Percentile)
+- [x] Generate `insightai_predictions.csv`
 
 ---
 
