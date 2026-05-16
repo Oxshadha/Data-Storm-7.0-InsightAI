@@ -76,8 +76,9 @@ def run_predict(config: dict) -> None:
     logger.info("=" * 60)
     logger.info("STAGE 4: PREDICT — Demand Estimation")
     logger.info("=" * 60)
-    # TODO: Wire up modeling scripts
-    logger.warning("Predict stage not yet implemented.")
+    from src.modeling.predict import generate_predictions
+    logger.info("Running generate_predictions...")
+    generate_predictions(config)
 
 
 STAGES = {
