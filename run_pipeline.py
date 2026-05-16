@@ -52,8 +52,12 @@ def run_gold(config: dict) -> None:
     logger.info("=" * 60)
     logger.info("STAGE 3: GOLD — Feature Engineering")
     logger.info("=" * 60)
-    # TODO: Wire up gold feature scripts
-    logger.warning("Gold stage not yet implemented.")
+    
+    from src.gold.feature_poi import create_poi_features
+    from src.gold.build_model_input import build_model_input
+    
+    create_poi_features(config)
+    build_model_input(config)
 
 
 def run_predict(config: dict) -> None:

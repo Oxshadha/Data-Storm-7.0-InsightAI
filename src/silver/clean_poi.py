@@ -1,9 +1,9 @@
 """
-Silver Layer — POI Standardization.
+Silver Layer — POI Standardization (Overture Maps Data).
 
 Handles:
-  1. Standardizing POI raw scraped data.
-  2. Deduplication and null handling.
+  1. Deduplicating Overture Maps places.
+  2. Null checks and formatting.
 
 Usage:
     python -m src.silver.clean_poi
@@ -27,13 +27,12 @@ def clean_poi(config: dict | None = None) -> None:
     if config is None:
         config = load_config()
 
-    # Note: POI raw may not exist if scraping hasn't run yet.
     bronze_dir = config["paths"]["bronze"]["root"]
     bronze_path = f"{bronze_dir}/poi_raw.parquet"
     clean_path = config["paths"]["silver"]["poi"]
     
     logger.info("=" * 60)
-    logger.info("Silver: Cleaning POI")
+    logger.info("Silver: Cleaning Overture Maps POIs")
     
     if not os.path.exists(bronze_path):
         logger.warning(f"Bronze POI file {bronze_path} not found. Skipping clean_poi.")
@@ -44,10 +43,10 @@ def clean_poi(config: dict | None = None) -> None:
     # ── 1. DQ Checks (Quarantine Path) ─────────────────────────
     df = add_rejection_column(df)
     
-    df = check_nulls(df, ["outlet_id", "osm_id", "poi_category"])
+    df = check_nulls(df, ["osm_id", "poi_category", "longitude", "latitude"])
     
-    # Deduplicate on outlet_id and osm_id
-    df = check_duplicates(df, ["outlet_id", "osm_id"])
+    # Deduplicate on osm_id
+    df = check_duplicates(df, ["osm_id"])
     
     # ── 2. Split & Quarantine ──────────────────────────────────
     write_quarantine_outputs(df, "poi", clean_path, config)

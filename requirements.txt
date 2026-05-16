@@ -31,3 +31,7 @@ ipykernel>=6.25.0
 
 # ── Utilities ──
 tqdm>=4.65.0              # Progress bars
+
+duckdb==0.10.1
+geopandas==0.14.3
+shapely==2.0.3
