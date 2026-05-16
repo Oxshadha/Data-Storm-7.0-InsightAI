@@ -67,7 +67,10 @@ def run_predict(config: dict) -> None:
     logger.info("=" * 60)
     
     from src.model.baseline_kmeans import run_baseline_model
+    from src.model.lgbm_quantile import run_lgbm_model
+    
     run_baseline_model(config)
+    run_lgbm_model(config)
 
 
 STAGES = {

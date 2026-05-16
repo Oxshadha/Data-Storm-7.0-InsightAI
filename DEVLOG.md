@@ -103,9 +103,9 @@
 
 ---
 
-## Phase 5: Predictive Modeling (Demand Estimation) 🟡
+## Phase 5: Predictive Modeling (Demand Estimation) ✅
 **Date:** 2026-05-16
-**Status:** Baseline Completed
+**Status:** Complete
 
 ### What was done:
 - [x] **The Spatial Heuristic (K-Means Baseline)**:
@@ -113,11 +113,13 @@
   - Ran K-Means clustering ($K=50$) to group outlets into behavioral peer groups based on spatio-temporal features.
   - Calculated the 90th percentile `Total_Volume` for the *uncensored* shops in each cluster.
   - Projected this ceiling onto the *censored* shops (`Predicted = max(Actual, Cluster_P90)`).
-  - Saved predictions to `output/insightai_predictions.csv` and ABT to `model_baseline_output.parquet`.
-
-### TODO:
-- [ ] Route 2: Train LightGBM Quantile Regressor on unconstrained demand.
-- [ ] Ensemble/Compare results.
+  - Saved baseline predictions to `model_baseline_output.parquet`.
+- [x] **Quantile Gradient Boosting (LightGBM)**:
+  - Trained `LGBMRegressor(objective='quantile', alpha=0.90)` strictly on *uncensored* historical data.
+  - Generated a synthetic future grid for January 2026, incorporating specific temporal triggers (10 weekend days, specific Jan holidays, seasonality).
+  - Passed the future grid into the trained model to predict the 90th percentile maximum potential.
+  - Applied the historical maximum safety floor (`max(Prediction, Historical_Max)`).
+  - Generated the final deliverable `output/insightai_predictions.csv`.
 
 ---
 
