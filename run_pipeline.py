@@ -29,8 +29,22 @@ def run_silver(config: dict) -> None:
     logger.info("=" * 60)
     logger.info("STAGE 2: SILVER — Forensic Cleaning & DQ Checks")
     logger.info("=" * 60)
-    # TODO: Wire up silver cleaning scripts
-    logger.warning("Silver stage not yet implemented.")
+    
+    from src.silver.clean_transactions import clean_transactions
+    from src.silver.clean_outlet_master import clean_outlet_master
+    from src.silver.clean_coordinates import clean_coordinates
+    from src.silver.clean_seasonality import clean_seasonality
+    from src.silver.clean_holidays import clean_holidays
+    from src.silver.clean_poi import clean_poi
+
+    clean_outlet_master(config) # Runs before transactions if we need dynamic tier, but transactions are needed for dynamic tier!
+    # Wait, clean_outlet_master loads bronze transactions directly, so order between them in Silver doesn't strict matter for the loading, 
+    # but it's cleaner to just run them.
+    clean_transactions(config)
+    clean_coordinates(config)
+    clean_seasonality(config)
+    clean_holidays(config)
+    clean_poi(config)
 
 
 def run_gold(config: dict) -> None:
@@ -38,8 +52,14 @@ def run_gold(config: dict) -> None:
     logger.info("=" * 60)
     logger.info("STAGE 3: GOLD — Feature Engineering")
     logger.info("=" * 60)
-    # TODO: Wire up gold feature scripts
-    logger.warning("Gold stage not yet implemented.")
+    
+    from src.gold.feature_poi import create_poi_features
+    from src.gold.collaborative_filter import run_collaborative_filtering
+    from src.gold.build_model_input import build_model_input
+    
+    create_poi_features(config)
+    run_collaborative_filtering(config)
+    build_model_input(config)
 
 
 def run_predict(config: dict) -> None:
@@ -47,8 +67,12 @@ def run_predict(config: dict) -> None:
     logger.info("=" * 60)
     logger.info("STAGE 4: PREDICT — Demand Estimation")
     logger.info("=" * 60)
-    # TODO: Wire up modeling scripts
-    logger.warning("Predict stage not yet implemented.")
+    
+    from src.model.baseline_kmeans import run_baseline_model
+    from src.model.lgbm_quantile import run_lgbm_model
+    
+    run_baseline_model(config)
+    run_lgbm_model(config)
 
 
 STAGES = {
@@ -81,8 +105,20 @@ def main():
     else:
         for name, fn in STAGES.items():
             fn(config)
+            
+        # Final Step: Sync Documentation & Plots
+        logger.info("=" * 60)
+        logger.info("FINAL STAGE: DOCUMENTATION & VISUALS")
+        logger.info("=" * 60)
+        import subprocess
+        
+        logger.info("Regenerating synchronized Jupyter Notebooks...")
+        subprocess.run([sys.executable, "notebooks/generate_notebooks.py"], check=True)
+        
+        logger.info("Exporting updated technical plots for report...")
+        subprocess.run([sys.executable, "export_plots.py"], check=True)
 
-    logger.info("✅ Pipeline complete.")
+    logger.info("✅ Pipeline complete. All models, notebooks, and plots are synchronized.")
 
 
 if __name__ == "__main__":

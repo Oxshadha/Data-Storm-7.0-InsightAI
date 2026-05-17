@@ -164,8 +164,7 @@ modeling:
   
   # Censoring detection thresholds
   censoring:
-    # Coefficient of variation threshold (low CV = suspiciously flat = likely capped)
-    cv_threshold: 0.15
+    cv_threshold: 0.25
     
     # Consecutive months at same volume threshold
     plateau_months: 3

@@ -1,160 +1,105 @@
 """
-Reusable Data Quality Checks — Parameterizable functions for the Silver layer.
+Silver Layer — Vectorized DQ Check Functions.
 
-Every check returns a DataFrame of FAILED records with a standardized schema:
-    dataset | check_type | column | key_value | row_index | reason | original_value | timestamp
+All checks operate on a DataFrame with a 'Rejection_Reason' column.
+They TAG rows in-place by appending to Rejection_Reason (never deleting rows).
+The quarantine split happens at the end in each clean_*.py script.
 
-These are collected and sent to the quarantine system (see quarantine.py).
+Key design rule:
+    df.loc[mask, reason_col] += "Reason text; "
+    → Multiple failures on one row stack up cleanly.
 
 Usage:
-    from src.silver.dq_checks import check_duplicates, check_nulls
-    failures = check_duplicates(df, key_columns=["Outlet_ID", "Year", "Month"], dataset_name="transactions")
+    from src.silver.dq_checks import (
+        add_rejection_column, check_nulls, check_duplicates,
+        check_referential_integrity, check_value_range, check_format,
+        check_zero_volumes, check_duplicate_retries, check_lazy_rep
+    )
+    df = add_rejection_column(df)
+    df = check_nulls(df, ["Outlet_ID", "Volume_Liters"])
+    df = check_zero_volumes(df)
+    clean, quarantined = split_by_rejection(df)
 """
-
-from datetime import datetime
-from typing import Optional
 
 import pandas as pd
 import numpy as np
-
 from src.utils.logger import get_logger
 
 logger = get_logger("silver.dq_checks")
 
-
-# ── Standardized Rejection Record Schema ─────────────────────
-
-
-def _rejection_record(
-    dataset: str,
-    check_type: str,
-    column: str,
-    key_value: str,
-    row_index: int,
-    reason: str,
-    original_value: str,
-) -> dict:
-    """Create a single standardized rejection record."""
-    return {
-        "dataset": dataset,
-        "check_type": check_type,
-        "column": column,
-        "key_value": str(key_value),
-        "row_index": int(row_index),
-        "reason": reason,
-        "original_value": str(original_value),
-        "timestamp": datetime.now().isoformat(),
-    }
+REASON_COL = "Rejection_Reason"
 
 
-def _build_rejection_df(records: list[dict]) -> pd.DataFrame:
-    """Convert a list of rejection dicts to a standardized DataFrame."""
-    if not records:
-        return pd.DataFrame(
-            columns=[
-                "dataset", "check_type", "column", "key_value",
-                "row_index", "reason", "original_value", "timestamp"
-            ]
-        )
-    return pd.DataFrame(records)
+# ── Setup ─────────────────────────────────────────────────────
 
 
-# ── DQ Check Functions ───────────────────────────────────────
+def add_rejection_column(df: pd.DataFrame, reason_col: str = REASON_COL) -> pd.DataFrame:
+    """Add an empty Rejection_Reason column to the DataFrame if not present."""
+    if reason_col not in df.columns:
+        df[reason_col] = ""
+    return df
 
 
-def check_duplicates(
-    df: pd.DataFrame,
-    key_columns: list[str],
-    dataset_name: str,
-    id_column: str = "Outlet_ID",
-) -> pd.DataFrame:
+def split_by_rejection(
+    df: pd.DataFrame, reason_col: str = REASON_COL
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Detect duplicate records based on a configurable composite key.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input data.
-    key_columns : list[str]
-        Columns forming the composite key.
-    dataset_name : str
-        Name of the dataset (for rejection records).
-    id_column : str
-        Column to use as the key_value identifier.
+    Split DataFrame into clean and quarantined based on Rejection_Reason.
 
     Returns
     -------
-    pd.DataFrame
-        Rejection records for duplicates found.
+    (clean_df, quarantined_df)
+        clean_df: rows where Rejection_Reason is empty
+        quarantined_df: rows where Rejection_Reason is filled
     """
-    dupes = df[df.duplicated(subset=key_columns, keep="first")]
-    logger.info(
-        f"[{dataset_name}] Duplicate check on {key_columns}: "
-        f"{len(dupes):,} duplicates found out of {len(df):,} rows"
-    )
+    clean_mask = df[reason_col].str.strip() == ""
+    clean_df = df[clean_mask].drop(columns=[reason_col]).reset_index(drop=True)
+    quarantined_df = df[~clean_mask].reset_index(drop=True)
+    return clean_df, quarantined_df
 
-    records = []
-    for idx, row in dupes.iterrows():
-        records.append(_rejection_record(
-            dataset=dataset_name,
-            check_type="DUPLICATE",
-            column="|".join(key_columns),
-            key_value=row.get(id_column, ""),
-            row_index=idx,
-            reason=f"Duplicate on composite key: {key_columns}",
-            original_value=str({col: row[col] for col in key_columns}),
-        ))
 
-    return _build_rejection_df(records)
+# ── Generic DQ Checks (Vectorized) ───────────────────────────
 
 
 def check_nulls(
     df: pd.DataFrame,
     mandatory_columns: list[str],
-    dataset_name: str,
-    id_column: str = "Outlet_ID",
+    reason_col: str = REASON_COL,
 ) -> pd.DataFrame:
     """
-    Flag records where mandatory fields contain null or empty values.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input data.
-    mandatory_columns : list[str]
-        Columns that must not be null.
-    dataset_name : str
-        Name of the dataset.
-    id_column : str
-        Column to use as the key_value identifier.
-
-    Returns
-    -------
-    pd.DataFrame
-        Rejection records for null violations.
+    Flag rows where any mandatory field is null or empty string.
+    Appends to Rejection_Reason without overwriting prior failures.
     """
-    records = []
     for col in mandatory_columns:
-        null_mask = df[col].isna() | (df[col].astype(str).str.strip() == "")
-        null_rows = df[null_mask]
+        if col not in df.columns:
+            logger.warning(f"Column '{col}' not found in DataFrame — skipping null check.")
+            continue
+        mask = df[col].isnull() | (df[col].astype(str).str.strip() == "")
+        count = mask.sum()
+        if count:
+            logger.info(f"  NULL_CHECK '{col}': {count:,} violations")
+            df.loc[mask, reason_col] += f"NULL:{col}; "
 
-        logger.info(
-            f"[{dataset_name}] Null check on '{col}': "
-            f"{len(null_rows):,} nulls found"
-        )
+    return df
 
-        for idx, row in null_rows.iterrows():
-            records.append(_rejection_record(
-                dataset=dataset_name,
-                check_type="NULL_VALUE",
-                column=col,
-                key_value=row.get(id_column, ""),
-                row_index=idx,
-                reason=f"Mandatory column '{col}' is null or empty",
-                original_value=str(row[col]),
-            ))
 
-    return _build_rejection_df(records)
+def check_duplicates(
+    df: pd.DataFrame,
+    key_columns: list[str],
+    reason_col: str = REASON_COL,
+    keep: str = "first",
+) -> pd.DataFrame:
+    """
+    Flag duplicate rows based on composite key. Keeps 'first' occurrence clean.
+    Duplicate retries (keep=False on all) use check_duplicate_retries instead.
+    """
+    dupe_mask = df.duplicated(subset=key_columns, keep=keep)
+    count = dupe_mask.sum()
+    if count:
+        logger.info(f"  DUPLICATE_CHECK {key_columns}: {count:,} duplicates flagged")
+        df.loc[dupe_mask, reason_col] += f"DUPLICATE:{'+'.join(key_columns)}; "
+
+    return df
 
 
 def check_referential_integrity(
@@ -162,60 +107,25 @@ def check_referential_integrity(
     ref_df: pd.DataFrame,
     fk_column: str,
     pk_column: str,
-    dataset_name: str,
-    ref_dataset_name: str = "reference",
-    id_column: str = "Outlet_ID",
+    ref_name: str = "reference",
+    reason_col: str = REASON_COL,
 ) -> pd.DataFrame:
     """
-    Validate that foreign key values exist in a reference dataset.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Dataset containing the foreign key.
-    ref_df : pd.DataFrame
-        Reference dataset containing the primary key.
-    fk_column : str
-        Foreign key column in df.
-    pk_column : str
-        Primary key column in ref_df.
-    dataset_name : str
-        Name of the source dataset.
-    ref_dataset_name : str
-        Name of the reference dataset.
-    id_column : str
-        Column to use as the key_value identifier.
-
-    Returns
-    -------
-    pd.DataFrame
-        Rejection records for referential integrity violations.
+    Flag rows where fk_column value does not exist in ref_df[pk_column].
     """
     valid_keys = set(ref_df[pk_column].dropna().unique())
     orphan_mask = ~df[fk_column].isin(valid_keys)
-    orphans = df[orphan_mask]
+    count = orphan_mask.sum()
+    if count:
+        logger.info(
+            f"  REF_INTEGRITY '{fk_column}' → {ref_name}.{pk_column}: "
+            f"{count:,} orphans"
+        )
+        df.loc[orphan_mask, reason_col] += (
+            f"REF_INTEGRITY:{fk_column}→{ref_name}.{pk_column}; "
+        )
 
-    logger.info(
-        f"[{dataset_name}] Referential integrity {fk_column} → "
-        f"{ref_dataset_name}.{pk_column}: {len(orphans):,} orphans found"
-    )
-
-    records = []
-    for idx, row in orphans.iterrows():
-        records.append(_rejection_record(
-            dataset=dataset_name,
-            check_type="REFERENTIAL_INTEGRITY",
-            column=fk_column,
-            key_value=row.get(id_column, ""),
-            row_index=idx,
-            reason=(
-                f"Value '{row[fk_column]}' in '{fk_column}' not found in "
-                f"{ref_dataset_name}.{pk_column}"
-            ),
-            original_value=str(row[fk_column]),
-        ))
-
-    return _build_rejection_df(records)
+    return df
 
 
 def check_value_range(
@@ -223,183 +133,195 @@ def check_value_range(
     column: str,
     min_val: float,
     max_val: float,
-    dataset_name: str,
-    id_column: str = "Outlet_ID",
+    reason_col: str = REASON_COL,
 ) -> pd.DataFrame:
     """
-    Assert numeric fields fall within expected min/max boundary.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input data.
-    column : str
-        Numeric column to check.
-    min_val : float
-        Minimum allowed value.
-    max_val : float
-        Maximum allowed value.
-    dataset_name : str
-        Name of the dataset.
-    id_column : str
-        Column to use as the key_value identifier.
-
-    Returns
-    -------
-    pd.DataFrame
-        Rejection records for out-of-range values.
+    Flag rows where numeric column falls outside [min_val, max_val].
     """
-    out_of_range = df[(df[column] < min_val) | (df[column] > max_val)]
+    if column not in df.columns:
+        logger.warning(f"Column '{column}' not found — skipping range check.")
+        return df
 
-    logger.info(
-        f"[{dataset_name}] Range check on '{column}' "
-        f"[{min_val}, {max_val}]: {len(out_of_range):,} violations"
-    )
+    mask = (df[column] < min_val) | (df[column] > max_val)
+    count = mask.sum()
+    if count:
+        logger.info(f"  RANGE_CHECK '{column}' [{min_val},{max_val}]: {count:,} violations")
+        df.loc[mask, reason_col] += f"RANGE:{column}<{min_val}or>{max_val}; "
 
-    records = []
-    for idx, row in out_of_range.iterrows():
-        records.append(_rejection_record(
-            dataset=dataset_name,
-            check_type="VALUE_RANGE",
-            column=column,
-            key_value=row.get(id_column, ""),
-            row_index=idx,
-            reason=(
-                f"Value {row[column]} outside allowed range "
-                f"[{min_val}, {max_val}]"
-            ),
-            original_value=str(row[column]),
-        ))
-
-    return _build_rejection_df(records)
+    return df
 
 
 def check_format(
     df: pd.DataFrame,
     column: str,
     pattern: str,
-    dataset_name: str,
-    id_column: str = "Outlet_ID",
+    reason_col: str = REASON_COL,
 ) -> pd.DataFrame:
     """
-    Validate fields conform to an expected regex format.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input data.
-    column : str
-        Column to validate.
-    pattern : str
-        Regex pattern the values should match (e.g., r"^OUT_\\d{5}$").
-    dataset_name : str
-        Name of the dataset.
-    id_column : str
-        Column to use as the key_value identifier.
-
-    Returns
-    -------
-    pd.DataFrame
-        Rejection records for format violations.
+    Flag rows where string column does not match regex pattern.
     """
-    non_null = df[df[column].notna()].copy()
-    match_mask = non_null[column].astype(str).str.match(pattern)
-    violations = non_null[~match_mask]
+    if column not in df.columns:
+        logger.warning(f"Column '{column}' not found — skipping format check.")
+        return df
 
-    logger.info(
-        f"[{dataset_name}] Format check on '{column}' "
-        f"(pattern: {pattern}): {len(violations):,} violations"
-    )
+    non_null = df[column].notna()
+    mismatch = non_null & ~df[column].astype(str).str.match(pattern, na=False)
+    count = mismatch.sum()
+    if count:
+        logger.info(f"  FORMAT_CHECK '{column}' (pattern={pattern}): {count:,} violations")
+        df.loc[mismatch, reason_col] += f"FORMAT:{column}!~{pattern}; "
 
-    records = []
-    for idx, row in violations.iterrows():
-        records.append(_rejection_record(
-            dataset=dataset_name,
-            check_type="FORMAT_VIOLATION",
-            column=column,
-            key_value=row.get(id_column, ""),
-            row_index=idx,
-            reason=f"Value '{row[column]}' does not match pattern '{pattern}'",
-            original_value=str(row[column]),
-        ))
+    return df
 
-    return _build_rejection_df(records)
+
+def check_valid_values(
+    df: pd.DataFrame,
+    column: str,
+    valid_values: list,
+    reason_col: str = REASON_COL,
+) -> pd.DataFrame:
+    """
+    Flag rows where a column contains values not in the allowed set.
+    Used after corrections — anything remaining that's invalid gets quarantined.
+    """
+    if column not in df.columns:
+        return df
+
+    invalid_mask = df[column].notna() & ~df[column].isin(valid_values)
+    count = invalid_mask.sum()
+    if count:
+        logger.info(f"  VALID_VALUES '{column}': {count:,} invalid values found")
+        df.loc[invalid_mask, reason_col] += f"INVALID_VALUE:{column}; "
+
+    return df
 
 
 # ── Transaction-Specific Forensic Checks ─────────────────────
 
 
-def check_negative_volumes(
-    df: pd.DataFrame,
-    volume_column: str = "Volume_Liters",
-    dataset_name: str = "transactions",
-    id_column: str = "Outlet_ID",
-) -> pd.DataFrame:
-    """
-    Detect negative volume rows — these are returns/reversals, NOT errors.
-    Tag them for forensic analysis rather than dropping.
-
-    Returns
-    -------
-    pd.DataFrame
-        Rejection records tagged as NEGATIVE_VOLUME (quarantined for analysis).
-    """
-    negatives = df[df[volume_column] < 0]
-
-    logger.info(
-        f"[{dataset_name}] Negative volume check: "
-        f"{len(negatives):,} rows with negative {volume_column}"
-    )
-
-    records = []
-    for idx, row in negatives.iterrows():
-        records.append(_rejection_record(
-            dataset=dataset_name,
-            check_type="NEGATIVE_VOLUME",
-            column=volume_column,
-            key_value=row.get(id_column, ""),
-            row_index=idx,
-            reason=(
-                f"Negative volume ({row[volume_column]:.2f} L) — "
-                f"likely return/reversal. Tagged for aggregation, not dropped."
-            ),
-            original_value=str(row[volume_column]),
-        ))
-
-    return _build_rejection_df(records)
-
-
 def check_zero_volumes(
     df: pd.DataFrame,
-    volume_column: str = "Volume_Liters",
-    dataset_name: str = "transactions",
-    id_column: str = "Outlet_ID",
+    volume_col: str = "Volume_Liters",
+    reason_col: str = REASON_COL,
 ) -> pd.DataFrame:
     """
-    Detect zero-volume rows — system adjustments or fee entries.
-
-    Returns
-    -------
-    pd.DataFrame
-        Rejection records tagged as ZERO_VOLUME.
+    Flag zero-volume rows as system adjustments / fee entries.
+    These are quarantined — they corrupt pricing and average volume calculations.
     """
-    zeros = df[df[volume_column] == 0.0]
+    mask = df[volume_col] == 0.0
+    count = mask.sum()
+    if count:
+        logger.info(f"  ZERO_VOLUME: {count:,} rows with 0.0 {volume_col} (system fees)")
+        df.loc[mask, reason_col] += "ZERO_VOLUME:system_adjustment_or_fee; "
 
-    logger.info(
-        f"[{dataset_name}] Zero volume check: "
-        f"{len(zeros):,} rows with exactly 0.0 {volume_column}"
+    return df
+
+
+def check_duplicate_retries(
+    df: pd.DataFrame,
+    key_columns: list[str],
+    reason_col: str = REASON_COL,
+) -> pd.DataFrame:
+    """
+    Detect duplicate retry rows caused by distributor system upload failures.
+    These create EXACT twin rows for the same purchase event.
+
+    Strategy: composite key on all meaningful transaction fields.
+    Keep the FIRST occurrence, quarantine all subsequent duplicates.
+    This is different from check_duplicates — we're specifically hunting
+    system retries, not just key-level duplication.
+    """
+    dupe_mask = df.duplicated(subset=key_columns, keep="first")
+    count = dupe_mask.sum()
+    if count:
+        logger.info(
+            f"  DUPLICATE_RETRY: {count:,} system retry duplicates detected "
+            f"(key: {key_columns})"
+        )
+        df.loc[dupe_mask, reason_col] += "DUPLICATE_RETRY:system_upload_failure; "
+
+    return df
+
+
+def tag_negative_volumes(
+    df: pd.DataFrame,
+    volume_col: str = "Volume_Liters",
+    flag_col: str = "Is_Return",
+) -> pd.DataFrame:
+    """
+    TAG negative volume rows as returns/reversals — do NOT quarantine them.
+    They remain in the clean dataset and net out during aggregation via sum().
+
+    Adds a boolean flag column 'Is_Return' for transparency.
+    """
+    df[flag_col] = df[volume_col] < 0
+    return_count = df[flag_col].sum()
+    if return_count:
+        logger.info(
+            f"  RETURN_TAG: {return_count:,} negative-volume rows tagged as "
+            f"returns (NOT quarantined — will net out in aggregation)"
+        )
+
+    return df
+
+
+def check_lazy_rep(
+    df: pd.DataFrame,
+    outlet_col: str = "Outlet_ID",
+    sku_col: str = "SKU_ID",
+    volume_col: str = "Volume_Liters",
+    max_sku_count: int = 2,
+    flag_col: str = "Lazy_Rep_Flag",
+) -> pd.DataFrame:
+    """
+    Detect "Lazy Rep" outlets: massive volume logged under ≤ max_sku_count SKUs.
+
+    A tiny village shop with 15L under 1 SKU = legitimate.
+    A large shop with 1,000L under 1 SKU = Lazy Rep.
+
+    Technique: flag outlets where unique SKU count ≤ max_sku_count
+    AND total monthly volume > median volume of their outlet tier.
+
+    The flag is added to the CLEAN data (not quarantined) for Gold layer handling.
+    Gold layer will redistribute volume using collaborative filtering.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Transaction-level data (can have multiple rows per outlet/month).
+    max_sku_count : int
+        Threshold for "suspiciously low" SKU diversity. Default 2.
+    """
+    # Compute per-outlet stats
+    outlet_stats = (
+        df.groupby(outlet_col, observed=True)
+        .agg(
+            unique_skus=(sku_col, "nunique"),
+            total_volume=(volume_col, "sum"),
+        )
+        .reset_index()
     )
 
-    records = []
-    for idx, row in zeros.iterrows():
-        records.append(_rejection_record(
-            dataset=dataset_name,
-            check_type="ZERO_VOLUME",
-            column=volume_column,
-            key_value=row.get(id_column, ""),
-            row_index=idx,
-            reason="Zero volume — likely system adjustment or fee entry",
-            original_value=str(row[volume_column]),
-        ))
+    # Median volume across all outlets
+    median_volume = outlet_stats["total_volume"].median()
 
-    return _build_rejection_df(records)
+    # Lazy Rep = low SKU diversity AND above-median volume
+    lazy_rep_outlets = set(
+        outlet_stats.loc[
+            (outlet_stats["unique_skus"] <= max_sku_count)
+            & (outlet_stats["total_volume"] > median_volume),
+            outlet_col,
+        ]
+    )
+
+    df[flag_col] = df[outlet_col].isin(lazy_rep_outlets)
+    count = df[flag_col].sum()
+    unique_outlets = len(lazy_rep_outlets)
+
+    logger.info(
+        f"  LAZY_REP: {unique_outlets} outlets flagged "
+        f"(≤{max_sku_count} SKUs + above-median volume). "
+        f"{count:,} transaction rows tagged with '{flag_col}'"
+    )
+
+    return df
