@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  17 MAY 2026 05:36
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  17 MAY 2026 05:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -400,12 +400,12 @@ Package hyperref Info: Link coloring OFF on input line 17.
 [1
 
 {/usr/local/texlive/2025basic/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-<plots/plot_1_ghost_exorcism.png, id=71, 578.16pt x 361.35pt>
+<plots/plot_1_ghost_exorcism.png, id=75, 578.16pt x 361.35pt>
 File: plots/plot_1_ghost_exorcism.png Graphic file (type png)
 <use plots/plot_1_ghost_exorcism.png>
 Package pdftex.def Info: plots/plot_1_ghost_exorcism.png  used on input line 52
 .
-(pdftex.def)             Requested size: 322.61168pt x 201.63232pt.
+(pdftex.def)             Requested size: 272.98318pt x 170.61195pt.
 
 
 
@@ -413,70 +413,78 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.64 
+l.65 
       [1 <output/plots/plot_1_ghost_exorcism.png>]
-<plots/plot_2_spatial_hotspots.png, id=81, 462.528pt x 346.896pt>
+<plots/plot_2_spatial_hotspots.png, id=86, 462.528pt x 346.896pt>
 File: plots/plot_2_spatial_hotspots.png Graphic file (type png)
 <use plots/plot_2_spatial_hotspots.png>
 Package pdftex.def Info: plots/plot_2_spatial_hotspots.png  used on input line 
-89.
-(pdftex.def)             Requested size: 322.61168pt x 241.96803pt.
+90.
+(pdftex.def)             Requested size: 272.98318pt x 204.74625pt.
 
 
 [2]
-<plots/plot_5_elbow_method.png, id=88, 578.16pt x 361.35pt>
+<plots/plot_5_elbow_method.png, id=92, 578.16pt x 361.35pt>
 File: plots/plot_5_elbow_method.png Graphic file (type png)
 <use plots/plot_5_elbow_method.png>
-Package pdftex.def Info: plots/plot_5_elbow_method.png  used on input line 102.
+Package pdftex.def Info: plots/plot_5_elbow_method.png  used on input line 104.
 
-(pdftex.def)             Requested size: 297.80121pt x 186.12213pt.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 106.
+(pdftex.def)             Requested size: 248.16516pt x 155.10178pt.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 106.
+(hyperref)                removing `math shift' on input line 109.
 
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 109.
+
+<plots/plot_3_feature_importance.png, id=93, 722.7pt x 433.62pt>
+File: plots/plot_3_feature_importance.png Graphic file (type png)
+<use plots/plot_3_feature_importance.png>
+Package pdftex.def Info: plots/plot_3_feature_importance.png  used on input lin
+e 116.
+(pdftex.def)             Requested size: 272.98318pt x 163.79144pt.
 
 
 [3 <output/plots/plot_2_spatial_hotspots.png> <output/plots/plot_5_elbow_method
 .png>]
-<plots/plot_3_feature_importance.png, id=101, 722.7pt x 433.62pt>
-File: plots/plot_3_feature_importance.png Graphic file (type png)
-<use plots/plot_3_feature_importance.png>
-Package pdftex.def Info: plots/plot_3_feature_importance.png  used on input lin
-e 113.
-(pdftex.def)             Requested size: 322.61168pt x 193.5657pt.
-<plots/plot_4_scatter_unconstrained.png, id=102, 578.16pt x 433.62pt>
+<plots/plot_4_scatter_unconstrained.png, id=106, 578.16pt x 433.62pt>
 File: plots/plot_4_scatter_unconstrained.png Graphic file (type png)
 <use plots/plot_4_scatter_unconstrained.png>
 Package pdftex.def Info: plots/plot_4_scatter_unconstrained.png  used on input 
-line 124.
-(pdftex.def)             Requested size: 322.61168pt x 241.95879pt.
+line 128.
+(pdftex.def)             Requested size: 272.98318pt x 204.73434pt.
 
 
 [4 <output/plots/plot_3_feature_importance.png> <output/plots/plot_4_scatter_un
 constrained.png>]
+<../reports/figures/cluster_pca.png, id=116, 722.7pt x 433.62pt>
+File: ../reports/figures/cluster_pca.png Graphic file (type png)
+<use ../reports/figures/cluster_pca.png>
+Package pdftex.def Info: ../reports/figures/cluster_pca.png  used on input line
+ 157.
+(pdftex.def)             Requested size: 248.16516pt x 148.8977pt.
 
-[5] (output/InsightAI_Final_Report.aux)
+
+[5 <output/../reports/figures/cluster_pca.png>]
+(output/InsightAI_Final_Report.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
 Package rerunfilecheck Info: File `InsightAI_Final_Report.out' has not changed.
 
-(rerunfilecheck)             Checksum: 0AC1F914D82865864A4439A9D3B3F5C7;3966.
+(rerunfilecheck)             Checksum: AAB5D6C9737F800D2184798865911295;4262.
  ) 
 Here is how much of TeX's memory you used:
- 10157 strings out of 474662
- 159191 string characters out of 5751109
+ 10167 strings out of 474662
+ 159505 string characters out of 5751109
  566022 words of memory out of 5000000
- 33065 multiletter control sequences out of 15000+600000
+ 33073 multiletter control sequences out of 15000+600000
  565685 words of font info for 60 fonts, out of 8000000 for 9000
  319 hyphenation exceptions out of 8191
- 75i,12n,79p,914b,485s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,12n,79p,945b,485s stack positions out of 10000i,1000n,20000p,200000b,200000s
  </Users/k.e.oshada/Library/texlive/2025basic/texmf-var/fonts/pk/ljfour/jknap
 pen/ec/tcrm1000.600pk></usr/local/texlive/2025basic/texmf-dist/fonts/type1/publ
 ic/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2025basic/texmf-dist/fonts/type1/
@@ -490,10 +498,10 @@ xmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2025basic/
 texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2025basi
 c/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2025
 basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on output/InsightAI_Final_Report.pdf (6 pages, 744499 bytes).
+Output written on output/InsightAI_Final_Report.pdf (6 pages, 1161247 bytes).
 PDF statistics:
- 175 PDF objects out of 1000 (max. 8388607)
- 132 compressed objects within 2 object streams
- 26 named destinations out of 1000 (max. 500000)
- 146 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 182 PDF objects out of 1000 (max. 8388607)
+ 137 compressed objects within 2 object streams
+ 28 named destinations out of 1000 (max. 500000)
+ 159 words of extra memory for PDF output out of 10000 (max. 10000000)
 

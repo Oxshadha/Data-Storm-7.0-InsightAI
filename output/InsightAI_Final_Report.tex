@@ -45,12 +45,13 @@
 The first stage of our pipeline focused on Data Engineering (DE) checks and "Data Exorcism" by identifying and neutralizing artifacts in the SFA (Sales Force Automation) data that contaminate demand signals. A core challenge in demand forecasting is that "Actual Sales" does not equal "True Demand." Sales data is merely the intersection of demand and supply. 
 
 \subsection{System Anomalies: Ghosts and Negative Returns}
-We identified "System Ghosts" which are extreme variance spikes caused by data upload failures or negative return adjustments that dropped net monthly sales to exactly zero. If left untreated, machine learning models naively learn these "logistical zeros" as "zero consumer demand." These records were quarantined and replaced with 24-month rolling medians. To validate our cleaning process, we utilized the \textbf{Coefficient of Variation (CV)}. Outlets with an unnaturally low CV over 24 months were flagged as "Censored," indicating their sales were hitting a hard systemic capacity ceiling rather than fluctuating organically.
+To ensure the integrity of our pipeline, we built a comprehensive \textbf{Data Quality Framework} consisting of parameterized rules (e.g., \texttt{DQ\_001} for Duplicate Detection, \texttt{DQ\_003} for Referential Integrity). Through this framework, we identified "System Ghosts" which are extreme variance spikes caused by data upload failures or negative return adjustments that dropped net monthly sales to exactly zero. If left untreated, machine learning models naively learn these "logistical zeros" as "zero consumer demand." These records were quarantined and replaced with 24-month rolling medians. To validate our cleaning process, we utilized the \textbf{Coefficient of Variation (CV)}. Outlets with an unnaturally low CV over 24 months were flagged as "Censored," indicating their sales were hitting a hard systemic capacity ceiling rather than fluctuating organically.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.65\linewidth]{plots/plot_1_ghost_exorcism.png}
+    \includegraphics[width=0.55\linewidth]{plots/plot_1_ghost_exorcism.png}
     \caption{\scriptsize Variance Stabilization. Demonstrating the stabilization of our target variable after removing extreme system-generated noise and wholesale sell-in spikes.}
+    \vspace{-1em}
 \end{figure}
 
 \subsection{Distributing Demand: Quarterly Smoothing}
@@ -86,8 +87,9 @@ Using K-Nearest Neighbors (KNN), we established a dual-radius catchment model (0
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.65\linewidth]{plots/plot_2_spatial_hotspots.png}
+    \includegraphics[width=0.55\linewidth]{plots/plot_2_spatial_hotspots.png}
     \caption{\scriptsize Spatial Catchment Hotspots. Visual proof of hidden high-density demand nodes in the Western Province mapped via Overture Data.}
+    \vspace{-1em}
 \end{figure}
 
 % --- SECTION 3: CAUSAL BASE LOGIC ---
@@ -99,8 +101,9 @@ Before predicting potential, the model must understand "Peer Behavior." We used 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.6\linewidth]{plots/plot_5_elbow_method.png}
+    \includegraphics[width=0.5\linewidth]{plots/plot_5_elbow_method.png}
     \caption{\scriptsize The Elbow Method. Statistically validating our peer-group selection strategy.}
+    \vspace{-1em}
 \end{figure}
 
 \subsection{Methodology: LightGBM ($p90$) and Validation Strategy}
@@ -110,8 +113,9 @@ Standard regression algorithms (like OLS) predict the \textit{mean}, which in ou
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.65\linewidth]{plots/plot_3_feature_importance.png}
+    \includegraphics[width=0.55\linewidth]{plots/plot_3_feature_importance.png}
     \caption{\scriptsize LightGBM Information Gain. Proof that the model relies on causal spatial logic rather than simply memorizing historical sales.}
+    \vspace{-1em}
 \end{figure}
 
 \subsection{Validating the Uncapped Ceiling: Structural Safety Floor}
@@ -121,8 +125,9 @@ This logic ensures that the prediction is always grounded in an outlet's proven 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.65\linewidth]{plots/plot_4_scatter_unconstrained.png}
+    \includegraphics[width=0.55\linewidth]{plots/plot_4_scatter_unconstrained.png}
     \caption{\scriptsize Breaking the Demand Ceiling. Actual sales (blue) hit systemic capacity ceilings, while our 90th-percentile architecture maps the latent potential (green stars) hiding above the constraint.}
+    \vspace{-1em}
 \end{figure}
 
 % --- SECTION 4: GENAI LOG & CONCLUSION ---
@@ -144,6 +149,16 @@ Team InsightAI utilized Generative AI strictly as an engineering accelerator to 
 
 At no point did GenAI replace human architectural decision-making. All core strategies including the decision to use $p90$ Quantile Regression, the specific cultural POI types targeted, and the collaborative filtering logic were strictly human-led.
 
+\section{Interactive Visualization and Strategic Delivery}
+To make our highly technical modeling actionable for business stakeholders, we developed an interactive \textbf{Folium Opportunity Heatmap} and a \textbf{Streamlit Dashboard}. The heatmap provides a geographic distribution of high-opportunity outlets across Sri Lanka, allowing business leaders to intuitively identify the most critical "Hidden Potential" targets. The Streamlit application provides real-time exploration of our cluster profiles and predicted demand ceilings, effectively bridging the gap between advanced econometrics and practical, on-the-ground sales execution.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{../reports/figures/cluster_pca.png}
+    \caption{\scriptsize 2D PCA Cluster Projection. High-resolution projection of the 30 micro-segments, illustrating the dense behavioral and spatial variance captured by our model's peer grouping strategy.}
+    \vspace{-1em}
+\end{figure}
+
 \section{Conclusion and Impact Summary}
 Team InsightAI has successfully re-engineered the approach to FMCG demand forecasting by moving beyond traditional time-series methods that merely memorize supply chain bottlenecks. 
 
@@ -151,7 +166,7 @@ Our comprehensive methodology establishes a clear, causal link between local phy
 
 This submission outlines a production-ready blueprint that is both mathematically rigorous and firmly rooted in the physical realities of the Sri Lankan retail landscape. It provides a direct path to identifying and capturing latent growth potential across the distribution network in 2026.
 
-\vspace{1.5in}
+\vspace{0.2in}
 \begin{center}
     \textbf{End of Technical Submission}
 \end{center}
