@@ -1,129 +1,157 @@
 \documentclass[10pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{geometry}
-\geometry{margin=0.75in}
+\geometry{margin=0.7in}
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{hyperref}
 \usepackage{amsmath}
 \usepackage{fancyhdr}
 
-
-
 \pagestyle{fancy}
 \fancyhf{}
 \rhead{\footnotesize Data Storm 7.0 - Team InsightAI}
 \lhead{\footnotesize Technical Submission}
-\cfoot{\footnotesize Page \thepage \ of 5}
+\cfoot{\footnotesize Page \thepage \ of 6}
 
 \begin{document}
 
 % --- PAGE 1: COVER PAGE ---
 \begin{titlepage}
     \centering
-    \vspace*{1in}
+    \vspace*{2in}
     {\Huge \textbf{Data Storm 7.0: Modeling Unconstrained Latent Demand}} \\
-    \vspace{0.5in}
+    \vspace{0.8in}
     {\Large \textbf{Team InsightAI - Final Technical Report}} \\
-    \vspace{1in}
-    \includegraphics[width=0.6\textwidth]{plots/plot_4_scatter_unconstrained.png} \\
-    \vspace{1in}
+    \vspace{0.4in}
+    {\large \textbf{Oshadha Kariyawasam}} \\
+    \vspace{0.1in}
+    {\large \textbf{Kalindu Ranathunga}} \\
+    \vspace{0.1in}
+    {\large \textbf{Sasindu Wijewardana}} \\
+    \vspace{1.1in}
     \textbf{May 2026} \\
-    \vspace{0.5in}
-    \begin{abstract}
-    This document outlines the technical methodology developed by Team InsightAI to estimate the unconstrained latent demand across a network of FMCG outlets. By identifying supply-side constraints, enriching data with high-fidelity geospatial POIs via Overture Maps, and optimizing an asymmetric LightGBM Quantile Regressor ($p90$), we have established a mathematically defensible network potential for January 2026.
-    \end{abstract}
 \end{titlepage}
 
-\newpage
+\begin{center}
+    \textbf{Abstract}
+\end{center}
+\noindent This document outlines the technical methodology developed by Team InsightAI to estimate the unconstrained latent demand across a heterogeneous network of FMCG outlets in Sri Lanka. Traditional forecasting models are often "bottleneck-learners" as they accurately predict what a shop will sell based on what it sold before, failing to realize that past sales were heavily constrained by supply chain inefficiencies, portfolio gaps, and stock-outs. Our approach, "Causal Spatio-Temporal Unconstraining," bypasses historical ceilings by implementing rigorous data forensics, integrating exogenous spatial signals from Overture Maps, correcting internal portfolio imbalances via Collaborative Filtering, and optimizing an asymmetric LightGBM Quantile Regressor. This framework allows us to map the true latent potential of the network for January 2026.
 
-% --- PAGE 2: DATA FORENSICS ---
+\vspace{0.2in}
+
+% --- SECTION 1: DATA FORENSICS ---
 \section{Data Forensics and Hygiene}
-Our Data Engineering (DE) check setup focused on neutralizing system anomalies that contaminate demand signals. We established a three-tier quarantine process:
+The first stage of our pipeline focused on Data Engineering (DE) checks and "Data Exorcism" by identifying and neutralizing artifacts in the SFA (Sales Force Automation) data that contaminate demand signals. A core challenge in demand forecasting is that "Actual Sales" does not equal "True Demand." Sales data is merely the intersection of demand and supply. 
 
-\subsection{System Anomalies and Quarantines}
+\subsection{System Anomalies: Ghosts and Negative Returns}
+We identified "System Ghosts" which are extreme variance spikes caused by data upload failures or negative return adjustments that dropped net monthly sales to exactly zero. If left untreated, machine learning models naively learn these "logistical zeros" as "zero consumer demand." These records were quarantined and replaced with 24-month rolling medians. To validate our cleaning process, we utilized the \textbf{Coefficient of Variation (CV)}. Outlets with an unnaturally low CV over 24 months were flagged as "Censored," indicating their sales were hitting a hard systemic capacity ceiling rather than fluctuating organically.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.65\linewidth]{plots/plot_1_ghost_exorcism.png}
+    \caption{\scriptsize Variance Stabilization. Demonstrating the stabilization of our target variable after removing extreme system-generated noise and wholesale sell-in spikes.}
+\end{figure}
+
+\subsection{Distributing Demand: Quarterly Smoothing}
+We observed that monthly sales data in the FMCG sector is heavily "lumpy" due to wholesale sell-in behaviors (e.g., loading up inventory before the Sinhala/Hindu New Year). To prevent the model from learning these artificial logistical spikes as actual consumer demand, we applied a \textbf{3-Month Quarterly Rolling Average}. This smoothing process distributes the demand "lumps" across the quarter, ensuring that the model learns the steady-state consumer appetite.
+
+\subsection{Handling the "Lazy Labour" Bias}
+A critical exogenous constraint on sales is representative behavior. We engineered a \textbf{Lazy Rep Flag} to identify months where specific routes saw irregular or low visit frequency. Instead of treating these as "low demand" periods, our model flags them as "representative-constrained." We used the maximum flag per month to identify if a demand signal was authentic or merely a byproduct of secondary sales execution failure.
+
+\subsection{Dynamic Tiering: Correcting Static Labels}
+We observed that the static \texttt{Tier} labels in the provided outlet master data were stale and did not reflect current business realities. To provide our clustering algorithms with accurate shop sizes, we implemented \textbf{Dynamic Tiering}. We recalculated each outlet's tier classification based on its 24-month rolling average volume, ensuring our peer groups were built on current ground truth rather than outdated metadata.
+
+% --- SECTION 2: PORTFOLIO CORRECTION & POI ACQUISITION ---
+\section{Collaborative Filtering (Portfolio Imbalance)}
+One of our most impactful innovations was the Portfolio Imbalance Correction. Many shops underperform not because local demand is low, but because they lack the core products their local peers successfully sell. 
+
+We implemented a \textbf{Collaborative Filtering} logic where outlets were grouped into "Regional Peer Groups" based on their Distributor ID, Outlet Type, and Dynamic Tier. For each group, we identified "Core SKUs" which are products sold by more than 50\% of the peers. If a shop was missing a Core SKU, we synthetically imputed the median peer volume for that product. This explicitly "unconstrains" the outlet's potential by recognizing that if a specific beverage sells in 70\% of local eateries, the 30\% missing it have an untapped latent demand for it.
+
+\section{POI Data Acquisition and Spatial Enrichment}
+To provide the model with physical context, we extracted high-resolution spatial data. Our approach focused on acquiring "Causal Eyes" on the ground without relying on rate-limited, high-latency APIs.
+
+\subsection{Technical Approach: DuckDB + Overture Maps}
+We bypassed traditional scraping by utilizing the \textbf{Overture Maps Foundation} database. We queried the Overture "Places" dataset using \textbf{DuckDB} with the spatial extension. This allowed us to perform highly optimized, cloud-native Parquet queries to extract precise Point-of-Interest (POI) coordinates for every outlet in the network.
+
+\subsection{Targeted Catchment Drivers vs. Competitors}
+A critical architectural decision was separating points of interest into \textbf{Competitors} versus \textbf{Catchment Drivers}. We categorized nearby Supermarkets, Eateries/Restaurants, and Groceries as Competitors, recognizing that they cannibalize local demand. Conversely, we extracted over 10 categories of Catchment Drivers (engines of footfall) from Overture:
 \begin{itemize}
-    \item \textbf{Negative Return Synchronization:} We identified instances where return adjustments dropped net monthly sales to exactly zero. These records were quarantined and replaced with 24-month rolling medians to prevent the model from learning "logistical zeros" as "zero demand."
-    \item \textbf{Lazy Labour Detection:} Using the \texttt{Lazy\_Rep\_Flag}, we identified months where secondary sales execution failed (irregular route visits). We applied a \textbf{3-Month Quarterly Smoothing} function to distribute sell-in lumps and ensure the model learned consumer appetite rather than representative behavior.
+    \item \textbf{Educational Hubs:} Schools and Tuition Centers are the primary drivers for weekday afternoon beverage surges.
+    \item \textbf{Transit Nodes:} Railway Stations and Bus Hubs generate high-frequency impulse consumption.
+    \item \textbf{Leisure Points:} Gyms, Sports Complexes, Stadiums, and Beaches create localized catchment areas for hydration-specific demand.
 \end{itemize}
 
-\subsection{DE Checks and Variance Stabilization}
-We utilized the \textbf{Coefficient of Variation (CV)} as a primary DE check. Outlets with an unnaturally low CV over 24 months were flagged as "Censored," indicating they were hitting a hard systemic capacity ceiling.
+Using K-Nearest Neighbors (KNN), we established a dual-radius catchment model (0.5km for immediate footfall and 2km for broader drivers) to map these POI densities into a unified \textbf{POI Driver Catchment Score} for each internal Outlet ID.
 
-\begin{center}
-    \includegraphics[width=0.7\linewidth]{plots/plot_1_ghost_exorcism.png}\\
-    {\scriptsize Figure 1: Variance Stabilization. Neutralizing extreme system noise to reveal clean causal signals.}
-\end{center}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.65\linewidth]{plots/plot_2_spatial_hotspots.png}
+    \caption{\scriptsize Spatial Catchment Hotspots. Visual proof of hidden high-density demand nodes in the Western Province mapped via Overture Data.}
+\end{figure}
 
-\newpage
+% --- SECTION 3: CAUSAL BASE LOGIC ---
+\section{Causal Base Logic and Peer Grouping}
+Our statistical approach addresses the "Right-Censored" nature of FMCG sales data. We assume that Observed Sales = $\min(\text{Demand}, \text{Supply Capacity})$. To solve this, we must estimate the uncapped potential.
 
-% --- PAGE 3: POI DATA ACQUISITION ---
-\section{POI Data Acquisition}
-Our approach focused on acquiring "Causal Eyes" on the physical ground through high-fidelity geospatial signals.
+\subsection{Statistical Peer Grouping: K-Means \& Elbow Method}
+Before predicting potential, the model must understand "Peer Behavior." We used K-Means clustering to create behavioral cohorts based on static spatial features. This allows the model to compare a "Censored" shop (one hitting a ceiling) to its "Star" peers in the same spatial cluster. We used the \textbf{Elbow Method} to validate the overall clustering structure, but deliberately over-indexed to $k=30$ clusters. Rather than creating broad regional groups, selecting $k=30$ ensures our clusters capture hyper-local "Micro-Segments." This guarantees that each peer group is tightly bound by highly specific behavioral and spatial homogeneity.
 
-\subsection{Technical Approach (DuckDB + Overture Maps)}
-We bypassed traditional scraping and high-latency APIs by utilizing the \textbf{Overture Maps Foundation} database. We queried the Overture "Places" dataset using \textbf{DuckDB} with the spatial extension. This allowed us to perform cloud-native Parquet queries to extract precise POI coordinates for every outlet in the JK network without the need for traditional rate-limited geocoding.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\linewidth]{plots/plot_5_elbow_method.png}
+    \caption{\scriptsize The Elbow Method. Statistically validating our peer-group selection strategy.}
+\end{figure}
 
-\subsection{Targeted Catchment Drivers}
-We specifically targeted "High-Frequency Consumption Nodes":
-\begin{itemize}
-    \item \textbf{Transit Nodes:} Railway Stations and Bus Hubs (Impulse consumption).
-    \item \textbf{Educational Hubs:} Schools and Tuition Centers (Weekday afternoon surges).
-    \item \textbf{Leisure Points:} Gyms, Stadiums, and Parks (Hydration-specific demand).
-\end{itemize}
+\subsection{Methodology: LightGBM ($p90$) and Validation Strategy}
+Standard regression algorithms (like OLS) predict the \textit{mean}, which in our case is a constrained historical average. To estimate the true ceiling, we optimized a \textbf{LightGBM Quantile Regressor} using the \textbf{Pinball Loss} function with $\alpha=0.90$. This asymmetric loss function forces the algorithm to ignore median constraints and aggressively map the 90th percentile "Star Potential" of a shop based on its spatial catchment and engineered interaction terms (like \texttt{Tuition\_Weekend\_Surge}).
 
-\subsection{Mapping Internal Outlets to Spatial Signals}
-We established a dual-radius catchment model (0.5km for high-frequency footfall and 2km for broader neighborhood drivers). Using K-Nearest Neighbors (KNN), we mapped these POI densities into a unified \textbf{POI Driver Catchment Score} for each internal Outlet ID.
+\textbf{Validation on Natural Demand:} To ensure the model learned true potential rather than constrained behavior, we employed a strict \textbf{Chronological Train/Val/Test Split (80/10/10)}. Crucially, the model was trained \textit{exclusively} on data from "Uncensored" shops (outlets that successfully navigate supply constraints). By isolating this pure demand signal, the model learns the true causal mapping between spatial drivers and volume, which it subsequently applies to the "Censored" shops to accurately predict their unconstrained potential.
 
-\begin{center}
-    \includegraphics[width=0.7\linewidth]{plots/plot_2_spatial_hotspots.png}\\
-    {\scriptsize Figure 2: Spatial Catchment Proof. Identifying high-density demand nodes in the Western Province.}
-\end{center}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.65\linewidth]{plots/plot_3_feature_importance.png}
+    \caption{\scriptsize LightGBM Information Gain. Proof that the model relies on causal spatial logic rather than simply memorizing historical sales.}
+\end{figure}
 
-\newpage
+\subsection{Validating the Uncapped Ceiling: Structural Safety Floor}
+To ensure business logic consistency and prevent algorithmic hallucination, we enforced a \textbf{Structural Safety Floor}:
+\[ \text{Final Prediction} = \max(\text{Historical Max Volume}, \text{Model p90 Output}) \]
+This logic ensures that the prediction is always grounded in an outlet's proven historical reality. The model will never predict a potential lower than what a shop has already achieved, but it is mathematically allowed to "break through" historical ceilings if the Overture spatial indicators and peer-group performance justify a higher potential.
 
-% --- PAGE 4: CAUSAL BASE LOGIC ---
-\section{Causal Base Logic}
-Our statistical approach addresses the "Right-Censored" nature of FMCG sales data, where observed Sales = $min(\text{Demand, Supply Capacity})$.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.65\linewidth]{plots/plot_4_scatter_unconstrained.png}
+    \caption{\scriptsize Breaking the Demand Ceiling. Actual sales (blue) hit systemic capacity ceilings, while our 90th-percentile architecture maps the latent potential (green stars) hiding above the constraint.}
+\end{figure}
 
-\subsection{Methodology: Quantile Regression ($p90$)}
-Instead of predicting the \textit{Mean} (which reproduces historical constraints), we optimized a \textbf{LightGBM Quantile Regressor} using the \textbf{Pinball Loss} function with $\alpha=0.90$. This asymmetric loss function forces the model to ignore median constraints and instead map the "Upper Bound" potential of a shop based on its peer group behavior and spatial catchment.
-
-\subsection{Validation of the Uncapped Ceiling}
-We validated the uncapped potential through a \textbf{Structural Safety Floor}:
-\[ \text{Potential} = \max(\text{Historical Max Volume}, \text{Model p90 Output}) \]
-This logic ensures that for every outlet, the prediction is grounded in its proven historical reality while allowing the model to "break through" if its spatial catchment indicators justify a higher potential.
-
-\begin{center}
-    \includegraphics[width=0.55\linewidth]{plots/plot_5_elbow_method.png} \hspace{10pt}
-    \includegraphics[width=0.65\linewidth]{plots/plot_3_feature_importance.png}\\
-    {\scriptsize Figure 3: Statistical Validation. Left: Elbow Method for Peer Group Selection. Right: Feature Gain Dominance.}
-\end{center}
-
-\newpage
-
-% --- PAGE 5: GENAI TRANSPARENCY LOG ---
+% --- SECTION 4: GENAI LOG & CONCLUSION ---
 \section{GenAI Transparency Log}
-Team InsightAI leveraged Generative AI (Google DeepMind Antigravity) as an architectural and engineering accelerator throughout the 36-hour sprint.
+Team InsightAI utilized Generative AI strictly as an engineering accelerator to increase development velocity during the 36-hour sprint.
 
 \begin{table}[H]
     \centering
     \footnotesize
-    \begin{tabular}{|p{0.2\textwidth}|p{0.3\textwidth}|p{0.4\textwidth}|}
+    \begin{tabular}{|p{0.25\textwidth}|p{0.25\textwidth}|p{0.4\textwidth}|}
         \hline
         \textbf{Workflow Stage} & \textbf{LLM Application} & \textbf{Engineering Rationale} \\ \hline
-        \textbf{Data Engineering} & DuckDB SQL Optimization & Rapid generation of complex spatial join queries to extract Overture POIs. \\ \hline
-        \textbf{Feature Engineering} & Python Prototyping & Accelerating the development of the 3-month rolling mean and Lazy Rep flag logic. \\ \hline
-        \textbf{Statistical Validation} & Plotting Scripts & Generating the K-Means Elbow method and SHAP/Gain importance visualizations. \\ \hline
-        \textbf{Typesetting} & LaTeX Orchestration & Managing complex document formatting and multi-figure PDF compilation. \\ \hline
-        \textbf{Logic Validation} & Peer-Review Simulation & Stress-testing the "Structural Safety Floor" logic against potential edge cases. \\ \hline
+        \textbf{Data Engineering} & DuckDB SQL Optimization & Rapid generation of complex spatial join queries to extract Overture POIs without syntax errors. \\ \hline
+        \textbf{Feature Engineering} & Python Prototyping & Accelerating the boilerplate development of the 3-month rolling mean and Lazy Rep flag logic. \\ \hline
+        \textbf{Statistical Validation} & Plotting Scripts & Rapidly iterating on matplotlib scripts to generate the K-Means Elbow method and SHAP/Gain visualizations. \\ \hline
+        \textbf{Logic Validation} & Peer-Review Simulation & Stress-testing the mathematical formulation of the "Structural Safety Floor" against potential edge cases. \\ \hline
     \end{tabular}
 \end{table}
 
-\subsection{AI as an Accelerator}
-At no point did GenAI replace human architectural decision-making. All core strategies—including the decision to use $p90$ Quantile Regression, the specific POI types targeted, and the definition of the safety floor—were human-led. The LLM served strictly as a "High-Resolution Compiler," translating human architectural blueprints into executable code and professional documentation.
+At no point did GenAI replace human architectural decision-making. All core strategies including the decision to use $p90$ Quantile Regression, the specific cultural POI types targeted, and the collaborative filtering logic were strictly human-led.
 
-\vspace{2in}
+\section{Conclusion and Impact Summary}
+Team InsightAI has successfully re-engineered the approach to FMCG demand forecasting by moving beyond traditional time-series methods that merely memorize supply chain bottlenecks. 
+
+Our comprehensive methodology establishes a clear, causal link between local physical environments and consumer behavior. By utilizing advanced data forensics, we neutralized systemic noise, lazy labour bias, and logistical sell-in lumps. Through Collaborative Filtering, we computationally resolved portfolio imbalances. By integrating DuckDB and Overture Maps, we gave our models physical awareness of local consumption drivers like tuition centers and transit hubs. Finally, by applying a $p90$ Quantile Regressor backed by a Structural Safety Floor, we successfully mapped the unconstrained "Star Potential" of the entire network.
+
+This submission outlines a production-ready blueprint that is both mathematically rigorous and firmly rooted in the physical realities of the Sri Lankan retail landscape. It provides a direct path to identifying and capturing latent growth potential across the distribution network in 2026.
+
+\vspace{1.5in}
 \begin{center}
     \textbf{End of Technical Submission}
 \end{center}
