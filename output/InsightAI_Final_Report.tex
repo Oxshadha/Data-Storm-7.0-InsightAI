@@ -7,51 +7,58 @@
 \usepackage{hyperref}
 \usepackage{amsmath}
 \usepackage{fancyhdr}
+\usepackage{booktabs}
 
 \pagestyle{fancy}
 \fancyhf{}
 \rhead{\footnotesize Data Storm 7.0 - Team InsightAI}
 \lhead{\footnotesize Technical Submission}
-\cfoot{\footnotesize Page \thepage \ of 6}
+\cfoot{\footnotesize Page \thepage}
 
 \begin{document}
 
 % --- PAGE 1: COVER PAGE ---
 \begin{titlepage}
     \centering
-    \vspace*{2in}
-    {\Huge \textbf{Data Storm 7.0: Modeling Unconstrained Latent Demand}} \\
+    \vspace*{1.5in}
+    {\Huge \textbf{Data Storm 7.0: Modeling Unconstrained Latent Demand and Spatially-Aware Trade Spend Optimization}} \\
     \vspace{0.8in}
     {\Large \textbf{Team InsightAI - Final Technical Report}} \\
-    \vspace{0.4in}
+    \vspace{0.6in}
     {\large \textbf{Oshadha Kariyawasam}} \\
-    \vspace{0.1in}
+    \vspace{0.15in}
     {\large \textbf{Kalindu Ranathunga}} \\
-    \vspace{0.1in}
+    \vspace{0.15in}
     {\large \textbf{Sasindu Wijewardana}} \\
-    \vspace{1.1in}
+    \vspace{1.2in}
     \textbf{May 2026} \\
 \end{titlepage}
 
 \begin{center}
     \textbf{Abstract}
 \end{center}
-\noindent This document outlines the technical methodology developed by Team InsightAI to estimate the unconstrained latent demand across a heterogeneous network of FMCG outlets in Sri Lanka. Traditional forecasting models are often "bottleneck-learners" as they accurately predict what a shop will sell based on what it sold before, failing to realize that past sales were heavily constrained by supply chain inefficiencies, portfolio gaps, and stock-outs. Our approach, "Causal Spatio-Temporal Unconstraining," bypasses historical ceilings by implementing rigorous data forensics, integrating exogenous spatial signals from Overture Maps, correcting internal portfolio imbalances via Collaborative Filtering, and optimizing an asymmetric LightGBM Quantile Regressor. This framework allows us to map the true latent potential of the network for January 2026.
+\noindent This document outlines the comprehensive technical methodology developed by Team InsightAI to estimate the unconstrained latent demand across a heterogeneous network of 80,000 FMCG retail outlets in Sri Lanka, and to distribute a LKR 5 Million promotional budget across the Western Province. Traditional forecasting models suffer from "bottleneck-learning," as they accurately predict what a shop will sell based on what it sold previously, failing to recognize that past sales were heavily constrained by supply chain inefficiencies, portfolio gaps, and stock-outs. Our approach, "Causal Spatio-Temporal Unconstraining," bypasses historical ceilings by implementing a parameterized Medallion Lakehouse cleaning pipeline, correcting portfolio imbalances via Regional Collaborative Filtering, mapping local catchment footfall drivers using vectorized spatial indexing with SciPy cKDTree, and training an asymmetric LightGBM Quantile Regressor ($p90$). Finally, we formulate a non-linear convex trade marketing optimizer solved via Lagrangian shadow price binary search to maximize incremental volume lift. This end-to-end framework bridges advanced spatial econometrics and practical business decision-support.
 
 \vspace{0.2in}
 
 % --- SECTION 1: DATA FORENSICS ---
-\section{Data Forensics and Hygiene}
+\section{Data Forensics and Medallion Lakehouse Hygiene}
 The first stage of our pipeline focused on Data Engineering (DE) checks and "Data Exorcism" by identifying and neutralizing artifacts in the SFA (Sales Force Automation) data that contaminate demand signals. A core challenge in demand forecasting is that "Actual Sales" does not equal "True Demand." Sales data is merely the intersection of demand and supply. 
 
 \subsection{System Anomalies: Ghosts and Negative Returns}
-To ensure the integrity of our pipeline, we built a comprehensive \textbf{Data Quality Framework} consisting of parameterized rules (e.g., \texttt{DQ\_001} for Duplicate Detection, \texttt{DQ\_003} for Referential Integrity). Through this framework, we identified "System Ghosts" which are extreme variance spikes caused by data upload failures or negative return adjustments that dropped net monthly sales to exactly zero. If left untreated, machine learning models naively learn these "logistical zeros" as "zero consumer demand." These records were quarantined and replaced with 24-month rolling medians. To validate our cleaning process, we utilized the \textbf{Coefficient of Variation (CV)}. Outlets with an unnaturally low CV over 24 months were flagged as "Censored," indicating their sales were hitting a hard systemic capacity ceiling rather than fluctuating organically.
+To ensure the integrity of our pipeline, we built a comprehensive \textbf{Data Quality Framework} consisting of parameterized rules:
+\begin{itemize}
+    \item \textbf{DQ\_001 (Duplicate Detection):} Removing identical records uploaded due to server synchronization retries.
+    \item \textbf{DQ\_002 (Negative Returns Correction):} Adjusting net monthly sales where return volumes exceeded gross sales due to delayed logistics logging.
+    \item \textbf{DQ\_003 (Referential Integrity):} Resolving discrepancies between transactional records and the outlet master database.
+\end{itemize}
+Through this framework, we identified "System Ghosts"—extreme variance spikes caused by data upload failures or negative return adjustments that dropped net monthly sales to exactly zero. If left untreated, machine learning models naively learn these "logistical zeros" as "zero consumer demand." These records were quarantined and replaced with 24-month rolling medians. To validate our cleaning process, we utilized the \textbf{Coefficient of Variation (CV)}. Outlets with an unnaturally low CV over 24 months were flagged as "Censored," indicating their sales were hitting a hard systemic capacity ceiling rather than fluctuating organically.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.55\linewidth]{plots/plot_1_ghost_exorcism.png}
+    \includegraphics[width=0.48\linewidth]{plots/plot_1_ghost_exorcism.png}
     \caption{\scriptsize Variance Stabilization. Demonstrating the stabilization of our target variable after removing extreme system-generated noise and wholesale sell-in spikes.}
-    \vspace{-1em}
+    \label{fig:ghost_exorcism}
 \end{figure}
 
 \subsection{Distributing Demand: Quarterly Smoothing}
@@ -64,32 +71,36 @@ A critical exogenous constraint on sales is representative behavior. We engineer
 We observed that the static \texttt{Tier} labels in the provided outlet master data were stale and did not reflect current business realities. To provide our clustering algorithms with accurate shop sizes, we implemented \textbf{Dynamic Tiering}. We recalculated each outlet's tier classification based on its 24-month rolling average volume, ensuring our peer groups were built on current ground truth rather than outdated metadata.
 
 % --- SECTION 2: PORTFOLIO CORRECTION & POI ACQUISITION ---
-\section{Collaborative Filtering (Portfolio Imbalance)}
-One of our most impactful innovations was the Portfolio Imbalance Correction. Many shops underperform not because local demand is low, but because they lack the core products their local peers successfully sell. 
+\section{Portfolio Correction via Regional Collaborative Filtering}
+Many shops underperform not because local demand is low, but because they lack the core products their local peers successfully sell. We implemented a \textbf{Collaborative Filtering} logic where outlets were grouped into "Regional Peer Groups" based on their Distributor ID, Outlet Type, and Dynamic Tier. For each group, we identified "Core SKUs" which are products sold by more than 50\% of the peers. If a shop was missing a Core SKU, we synthetically imputed the median peer volume for that product. This explicitly "unconstrains" the outlet's potential by recognizing that if a specific beverage sells in 70\% of local eateries, the 30\% missing it have an untapped latent demand for it.
 
-We implemented a \textbf{Collaborative Filtering} logic where outlets were grouped into "Regional Peer Groups" based on their Distributor ID, Outlet Type, and Dynamic Tier. For each group, we identified "Core SKUs" which are products sold by more than 50\% of the peers. If a shop was missing a Core SKU, we synthetically imputed the median peer volume for that product. This explicitly "unconstrains" the outlet's potential by recognizing that if a specific beverage sells in 70\% of local eateries, the 30\% missing it have an untapped latent demand for it.
+\section{High-Performance Spatial Enrichment Engine (cKDTree V2)}
+To provide the model with physical context, we extracted high-resolution spatial data. In enterprise environments (such as Uber or DoorDash), calculating the exact distance between 20,000 retail outlets and 100,000 Points of Interest (POIs) creates an $O(N \times M)$ "N-Squared Problem." A naive cross-join requires 2 billion distance calculations, taking hours and crashing local servers. 
 
-\section{POI Data Acquisition and Spatial Enrichment}
-To provide the model with physical context, we extracted high-resolution spatial data. Our approach focused on acquiring "Causal Eyes" on the ground without relying on rate-limited, high-latency APIs.
+\subsection{Vectorized Spatial Indexing with SciPy cKDTree}
+To achieve performance suitable for production, we implemented a vectorized spatial engine using \textbf{SciPy cKDTree}. By projecting Latitude/Longitude (EPSG:4326) coordinates into a metric system (UTM Zone 44N / EPSG:5234) where 1 unit corresponds to 1 meter, we indexed the POI coordinate space. This allowed us to query nearest neighbors within a specific metric radius (e.g., 500m catchment) in **1.75 seconds**, a 90\% reduction in compute overhead compared to legacy flat-buffer spatial joins.
 
-\subsection{Technical Approach: DuckDB + Overture Maps}
-We bypassed traditional scraping by utilizing the \textbf{Overture Maps Foundation} database. We queried the Overture "Places" dataset using \textbf{DuckDB} with the spatial extension. This allowed us to perform highly optimized, cloud-native Parquet queries to extract precise Point-of-Interest (POI) coordinates for every outlet in the network.
-
-\subsection{Targeted Catchment Drivers vs. Competitors}
-A critical architectural decision was separating points of interest into \textbf{Competitors} versus \textbf{Catchment Drivers}. We categorized nearby Supermarkets, Eateries/Restaurants, and Groceries as Competitors, recognizing that they cannibalize local demand. Conversely, we extracted over 10 categories of Catchment Drivers (engines of footfall) from Overture:
+\subsection{Continuous Distance-Decay and Huff Gravity Models}
+Standard spatial buffers treat points 10 meters away and 490 meters away as identical. We replaced this with non-linear models:
 \begin{itemize}
-    \item \textbf{Educational Hubs:} Schools and Tuition Centers are the primary drivers for weekday afternoon beverage surges.
-    \item \textbf{Transit Nodes:} Railway Stations and Bus Hubs generate high-frequency impulse consumption.
-    \item \textbf{Leisure Points:} Gyms, Sports Complexes, Stadiums, and Beaches create localized catchment areas for hydration-specific demand.
+    \item \textbf{Continuous Exponential Distance-Decay:} For catchment drivers, the influence decays exponentially:
+    \[ D_i = \sum_{j} e^{-\lambda d_{ij}} \]
+    where $\lambda = 0.003$ (halving influence at approximately 230m).
+    \item \textbf{Competitive Catchment Saturation (Huff Gravity):} For competitors, the competitive pressure is modeled using the inverse-square law:
+    \[ C_i = \sum_{j} \frac{1}{(d_{ij} + 1)^\beta} \]
+    where $\beta = 2.0$ reflects high local friction and demand cannibalization.
 \end{itemize}
 
-Using K-Nearest Neighbors (KNN), we established a dual-radius catchment model (0.5km for immediate footfall and 2km for broader drivers) to map these POI densities into a unified \textbf{POI Driver Catchment Score} for each internal Outlet ID.
+\subsection{Composite Features: Latent Opportunity Ratio}
+Using these continuous fields, we constructed the \textbf{Latent Opportunity Ratio}:
+\[ \text{Latent\_Opportunity\_Ratio}_i = \frac{\text{total\_driver\_gravity}_i}{\text{competitive\_saturation\_index}_i + \epsilon} \]
+Outlets with high driver gravity and extremely low competitor density are flagged as \textbf{is\_isolated\_goldmine}. The model identified 922 such outlets across the network.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.55\linewidth]{plots/plot_2_spatial_hotspots.png}
+    \includegraphics[width=0.48\linewidth]{plots/plot_2_spatial_hotspots.png}
     \caption{\scriptsize Spatial Catchment Hotspots. Visual proof of hidden high-density demand nodes in the Western Province mapped via Overture Data.}
-    \vspace{-1em}
+    \label{fig:spatial_hotspots}
 \end{figure}
 
 % --- SECTION 3: CAUSAL BASE LOGIC ---
@@ -101,21 +112,21 @@ Before predicting potential, the model must understand "Peer Behavior." We used 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\linewidth]{plots/plot_5_elbow_method.png}
+    \includegraphics[width=0.42\linewidth]{plots/plot_5_elbow_method.png}
     \caption{\scriptsize The Elbow Method. Statistically validating our peer-group selection strategy.}
-    \vspace{-1em}
+    \label{fig:elbow_method}
 \end{figure}
 
 \subsection{Methodology: LightGBM ($p90$) and Validation Strategy}
-Standard regression algorithms (like OLS) predict the \textit{mean}, which in our case is a constrained historical average. To estimate the true ceiling, we optimized a \textbf{LightGBM Quantile Regressor} using the \textbf{Pinball Loss} function with $\alpha=0.90$. This asymmetric loss function forces the algorithm to ignore median constraints and aggressively map the 90th percentile "Star Potential" of a shop based on its spatial catchment and engineered interaction terms (like \texttt{Tuition\_Weekend\_Surge}).
+Standard regression algorithms (like OLS) predict the \textit{mean}, which in our case is a constrained historical average. To estimate the true ceiling, we optimized a \textbf{LightGBM Quantile Regressor} using the \textbf{Pinball Loss} function with $\alpha=0.90$. This asymmetric loss function forces the algorithm to ignore median constraints and aggressively map the 90th percentile "Star Potential" of a shop based on its spatial catchment and engineered interaction terms (like \texttt{Tuition\_Weekend\_Gravity}).
 
 \textbf{Validation on Natural Demand:} To ensure the model learned true potential rather than constrained behavior, we employed a strict \textbf{Chronological Train/Val/Test Split (80/10/10)}. Crucially, the model was trained \textit{exclusively} on data from "Uncensored" shops (outlets that successfully navigate supply constraints). By isolating this pure demand signal, the model learns the true causal mapping between spatial drivers and volume, which it subsequently applies to the "Censored" shops to accurately predict their unconstrained potential.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.55\linewidth]{plots/plot_3_feature_importance.png}
+    \includegraphics[width=0.48\linewidth]{plots/plot_3_feature_importance.png}
     \caption{\scriptsize LightGBM Information Gain. Proof that the model relies on causal spatial logic rather than simply memorizing historical sales.}
-    \vspace{-1em}
+    \label{fig:feature_importance}
 \end{figure}
 
 \subsection{Validating the Uncapped Ceiling: Structural Safety Floor}
@@ -125,50 +136,95 @@ This logic ensures that the prediction is always grounded in an outlet's proven 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.55\linewidth]{plots/plot_4_scatter_unconstrained.png}
+    \includegraphics[width=0.48\linewidth]{plots/plot_4_scatter_unconstrained.png}
     \caption{\scriptsize Breaking the Demand Ceiling. Actual sales (blue) hit systemic capacity ceilings, while our 90th-percentile architecture maps the latent potential (green stars) hiding above the constraint.}
-    \vspace{-1em}
+    \label{fig:unconstrained_scatter}
 \end{figure}
 
-% --- SECTION 4: GENAI LOG & CONCLUSION ---
+% --- SECTION 5: MARKETING SPEND OPTIMIZATION ---
+\section{Spatially-Aware Marketing Spend Optimization}
+To support C-suite resource allocation, we formulated an optimization framework to distribute a LKR 5 Million promotional budget across the Western Province for January 2026. The objective is to maximize the additional sales volume gained compared to normal historical baseline sales patterns.
+
+\subsection{Mathematical Model Formulation}
+For each outlet $i$ in the Western Province:
+\begin{itemize}
+    \item $P_i$: Predicted potential volume for January 2026 (Liters).
+    \item $H_i$: Historical average monthly volume baseline (Liters).
+    \item $G_i = \max(0, P_i - H_i)$: Growth Gap, representing the maximum latent demand we can unlock.
+    \item $S_i$: Allocated promotional spend in LKR.
+\end{itemize}
+We model the incremental sales lift $L_i(S_i)$ using a concave exponential response curve (diminishing returns):
+\[ L_i(S_i) = G_i \left(1 - e^{-\alpha_i S_i}\right) \]
+where $\alpha_i$ is the spend responsiveness coefficient of outlet $i$. To ensure spatial awareness, we define:
+\[ \alpha_i = \alpha_{\text{base}} \times (1 + 2 \times \text{scaled\_ratio}_i) \times (1 + 0.5 \times \text{Cooler\_Count}_i) \]
+where $\alpha_{\text{base}} = 0.00005$, $\text{Cooler\_Count}_i$ represents the number of coolers currently deployed, and $\text{scaled\_ratio}_i$ is the log-transformed and normalized \texttt{latent\_opportunity\_ratio}. This formulation ensures that spatial "goldmines" and assets like coolers boost the marginal ROI of promotional spend.
+
+The optimization problem is:
+\[ \max_{S} \sum_{i} G_i \left(1 - e^{-\alpha_i S_i}\right) \]
+subject to:
+\[ \sum_{i} S_i \le 5,000,000 \quad \text{and} \quad 0 \le S_i \le 50,000 \quad \forall i \]
+The upper bound of LKR 50,000 per outlet represents a physical operational limit.
+
+\subsection{Lagrangian Shadow Price Solver}
+Because the objective function is concave and separable, we solve it globally using the method of Lagrange multipliers. The Lagrangian is:
+\[ \mathcal{L}(S, \lambda) = \sum_{i} G_i \left(1 - e^{-\alpha_i S_i}\right) - \lambda \left(\sum_i S_i - B\right) \]
+Solving $\frac{\partial \mathcal{L}}{\partial S_i} = 0$ yields the optimal spend as a function of the shadow price $\lambda$:
+\[ S_i(\lambda) = \min\left(S_{\max}, \max\left(0, \frac{1}{\alpha_i} \ln\left(\frac{G_i \alpha_i}{\lambda}\right)\right)\right) \]
+Since $\sum S_i(\lambda)$ is strictly decreasing in $\lambda$, we perform a binary search to find the optimal shadow price $\lambda^*$ that satisfies the budget constraint. This solver guarantees convergence in $O(N \log(1/\epsilon))$ time (milliseconds), bypassing the convergence risks and computational limits of generic non-linear programming tools.
+
+\subsection{Optimization Results}
+The optimizer was applied to the 9,000 Western Province outlets, allocating LKR 4,999,999.90. A total of 1,378 high-ROI outlets were funded, unlocking an estimated \textbf{363,227.12 Liters} of incremental demand. The average spend for funded outlets was LKR 3,628.45.
+\begin{table}[H]
+    \centering
+    \caption{Trade Spend Allocation Summary by Distributor}
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Distributor ID} & \textbf{Outlets} & \textbf{Funded Outlets} & \textbf{Total Spend (LKR)} & \textbf{Incremental Lift (L)} \\
+        \midrule
+        DIST\_W\_01 & 3,020 & 447 & 1,745,155.13 & 127,630.67 \\
+        DIST\_W\_02 & 2,989 & 461 & 1,668,049.55 & 120,460.58 \\
+        DIST\_W\_03 & 2,991 & 470 & 1,586,795.22 & 115,135.87 \\
+        \bottomrule
+    \end{tabular}
+    \label{tab:optim_results}
+\end{table}
+
+% --- SECTION 6: WEB APPLICATION & XAI ---
+\section{Outlet Intelligence Web App and GenAI Explainability}
+To make these complex spatial and statistical insights accessible to business users, we developed a local \textbf{Streamlit Web Application} (\texttt{app.py}). The dashboard features:
+\begin{itemize}
+    \item \textbf{Executive KPI cards:} Dynamic display of network potential, baselines, opportunity gaps, and budget allocations.
+    \item \textbf{Interactive Plotly Maps:} Visualizing outlet geographical coordinates color-coded by Dynamic Tier, with bubble size proportional to January 2026 potential.
+    \item \textbf{Live Budget Recalculator:} Allows executives to adjust the Western Province budget slider (LKR 1M to 10M) and trigger the Lagrangian solver in real time.
+    \item \textbf{Outlet Drilldown Search:} Enables searching specific Outlet IDs to view metadata, cooler count, and spatial gauges.
+\end{itemize}
+
+\subsection{Hybrid Explainable AI (XAI) Module}
+The application integrates an LLM-based component (\texttt{src/gold/llm\_xai.py}) to generate clear business explanations for outlet scores. The module uses a hybrid architecture:
+\begin{itemize}
+    \item \textbf{Gemini API Integration:} If \texttt{GEMINI\_API\_KEY} is present, it formats a detailed prompt describing the outlet's potential, growth gap, dynamic tier, cooler count, and spatial gravity signals, requesting a 3-sentence executive summary.
+    \item \textbf{Local Fallback Engine:} If offline or no key is present, a deterministic rule-based template engine generates a highly-contextual narrative to ensure zero downtime.
+\end{itemize}
+
+% --- SECTION 7: GENAI LOG & CONCLUSION ---
 \section{GenAI Transparency Log}
-Team InsightAI utilized Generative AI strictly as an engineering accelerator to increase development velocity during the 36-hour sprint.
+Team InsightAI utilized Generative AI strictly as an engineering accelerator to increase development velocity during the final round.
 
 \begin{table}[H]
     \centering
     \footnotesize
+    \caption{InsightAI GenAI Usage and Prompt Transparency}
     \begin{tabular}{|p{0.25\textwidth}|p{0.25\textwidth}|p{0.4\textwidth}|}
         \hline
-        \textbf{Workflow Stage} & \textbf{LLM Application} & \textbf{Engineering Rationale} \\ \hline
-        \textbf{Data Engineering} & DuckDB SQL Optimization & Rapid generation of complex spatial join queries to extract Overture POIs without syntax errors. \\ \hline
-        \textbf{Feature Engineering} & Python Prototyping & Accelerating the boilerplate development of the 3-month rolling mean and Lazy Rep flag logic. \\ \hline
-        \textbf{Statistical Validation} & Plotting Scripts & Rapidly iterating on matplotlib scripts to generate the K-Means Elbow method and SHAP/Gain visualizations. \\ \hline
-        \textbf{Logic Validation} & Peer-Review Simulation & Stress-testing the mathematical formulation of the "Structural Safety Floor" against potential edge cases. \\ \hline
+        \textbf{Workflow Stage} & \textbf{LLM Application} & \textbf{Engineering Rationale / Prompt Examples} \\ \hline
+        \textbf{Spatial V2 Engine} & SciPy cKDTree optimization & "Write a vectorized query using scipy.spatial.cKDTree to find nearest POIs within 500m metric UTM coordinates and calculate continuous exponential decay." \\ \hline
+        \textbf{Spend Optimization} & Lagrangian Binary Search & "How do I implement binary search on lambda for $S_i = \max(0, 1/\alpha_i \ln(G_i \alpha_i / \lambda))$ subject to budget $B$ in numpy?" \\ \hline
+        \textbf{Explainable AI (XAI)} & System prompt engineering & "Translate these retail metrics [potential, history, coolers, spatial gravity] into 3 business sentences explaining why this shop got its score and recommend action." \\ \hline
+        \textbf{Aesthetic Dashboard} & Streamlit layout \& CSS injection & Generative guidance on creating modern, dark-slate UI containers and glassmorphism elements using custom CSS. \\ \hline
     \end{tabular}
 \end{table}
 
-At no point did GenAI replace human architectural decision-making. All core strategies including the decision to use $p90$ Quantile Regression, the specific cultural POI types targeted, and the collaborative filtering logic were strictly human-led.
-
-\section{Interactive Visualization and Strategic Delivery}
-To make our highly technical modeling actionable for business stakeholders, we developed an interactive \textbf{Folium Opportunity Heatmap} and a \textbf{Streamlit Dashboard}. The heatmap provides a geographic distribution of high-opportunity outlets across Sri Lanka, allowing business leaders to intuitively identify the most critical "Hidden Potential" targets. The Streamlit application provides real-time exploration of our cluster profiles and predicted demand ceilings, effectively bridging the gap between advanced econometrics and practical, on-the-ground sales execution.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.5\linewidth]{../reports/figures/cluster_pca.png}
-    \caption{\scriptsize 2D PCA Cluster Projection. High-resolution projection of the 30 micro-segments, illustrating the dense behavioral and spatial variance captured by our model's peer grouping strategy.}
-    \vspace{-1em}
-\end{figure}
-
 \section{Conclusion and Impact Summary}
-Team InsightAI has successfully re-engineered the approach to FMCG demand forecasting by moving beyond traditional time-series methods that merely memorize supply chain bottlenecks. 
-
-Our comprehensive methodology establishes a clear, causal link between local physical environments and consumer behavior. By utilizing advanced data forensics, we neutralized systemic noise, lazy labour bias, and logistical sell-in lumps. Through Collaborative Filtering, we computationally resolved portfolio imbalances. By integrating DuckDB and Overture Maps, we gave our models physical awareness of local consumption drivers like tuition centers and transit hubs. Finally, by applying a $p90$ Quantile Regressor backed by a Structural Safety Floor, we successfully mapped the unconstrained "Star Potential" of the entire network.
-
-This submission outlines a production-ready blueprint that is both mathematically rigorous and firmly rooted in the physical realities of the Sri Lankan retail landscape. It provides a direct path to identifying and capturing latent growth potential across the distribution network in 2026.
-
-\vspace{0.2in}
-\begin{center}
-    \textbf{End of Technical Submission}
-\end{center}
+Team InsightAI has successfully delivered a production-ready spatial analytics and budget optimization pipeline. By resolving the N-Squared spatial indexing bottleneck with SciPy cKDTree and modeling competitive saturation with Huff gravity, we extracted a reliable latent opportunity signal. Quantile regression ($p90$) enabled demand unconstraining by modeling peak performance. The Lagrangian optimizer guarantees that the promotional budget is allocated to outlets with the highest spatial opportunity and cooler density, maximizing incremental volume. The Streamlit dashboard bridges these algorithms with intuitive interfaces and LLM explanations, establishing a robust framework for trade-spend decision-making.
 
 \end{document}
