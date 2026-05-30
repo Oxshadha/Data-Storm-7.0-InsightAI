@@ -151,6 +151,28 @@ poi_scraping:
   requests_per_second: 1
   batch_size: 50
 
+# ── Spatial Intelligence Engine ────────────────────────────
+# Enterprise-grade distance-decay and competitive density parameters.
+
+spatial_engine:
+  # Catchment driver search radius (meters)
+  # POIs beyond this distance contribute zero gravity weight
+  catchment_radius_m: 1500
+
+  # Exponential decay rate (λ) for catchment gravity: W = e^(-λd)
+  # λ=0.003 → influence halves every ~230m (pedestrian walking catchment)
+  # λ=0.005 → influence halves every ~140m (dense urban micro-catchment)
+  decay_lambda: 0.003
+
+  # Competitor search radius (meters)
+  # Tighter than catchment — competition is hyperlocal
+  competitor_radius_m: 500
+
+  # Huff gravity exponent (β) for competition: W = 1 / (d + 1)^β
+  # β=2.0 → inverse-square law (Huff, 1964)
+  # β=1.5 → softer decay for less dense areas
+  huff_beta: 2.0
+
 # ── Modeling ───────────────────────────────────────────────
 
 modeling:

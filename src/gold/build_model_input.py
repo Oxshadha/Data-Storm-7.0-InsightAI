@@ -92,7 +92,7 @@ def build_model_input(config: dict | None = None) -> None:
     # Master
     abt = base_grid.merge(master_df, on="Outlet_ID", how="left")
     
-    # POIs
+    # POIs (V2: now includes both flat counts AND gravity scores)
     abt = abt.merge(poi_df, on="Outlet_ID", how="left")
     
     # Define Catchment Boolean Flags based on POI categories
@@ -104,21 +104,34 @@ def build_model_input(config: dict | None = None) -> None:
         return df[cols].sum(axis=1)
 
     # High Footfall Drivers (Catchments) - Numerical
-    abt["poi_driver_catchment"] = sum_poi(abt, [
-        "school", "education", "park", "beach", "hospital", 
-        "transport_hub", "stadium", "gym", "leisure", "sports_center", "railway_station"
-    ])
+    if "poi_driver_catchment" not in abt.columns:
+        abt["poi_driver_catchment"] = sum_poi(abt, [
+            "school", "education", "park", "beach", "hospital", 
+            "transport_hub", "stadium", "gym", "leisure", "sports_center", "railway_station"
+        ])
     abt["Has_High_Footfall_Catchment"] = (abt["poi_driver_catchment"] > 0).astype(int)
     
     # Competitive Cannibalization Risks (Supermarkets, Restaurants, Cafes) - Numerical
-    abt["poi_cannibal_risk"] = sum_poi(abt, ["supermarket", "restaurant", "cafe", "convenience_store"])
+    if "poi_cannibal_risk" not in abt.columns:
+        abt["poi_cannibal_risk"] = sum_poi(abt, ["supermarket", "restaurant", "cafe", "convenience_store"])
     abt["Has_Cannibalization_Risk"] = (abt["poi_cannibal_risk"] > 0).astype(int)
     
-    # Keep specific ones for interactions
+    # Keep specific ones for interactions (binary flags from flat counts)
     abt["Has_Youth_Catchment"] = (sum_poi(abt, ["school", "education"]) > 0).astype(int)
     abt["Has_Leisure_Catchment"] = (sum_poi(abt, ["park", "beach"]) > 0).astype(int)
     abt["Has_Health_Catchment"] = (sum_poi(abt, ["hospital"]) > 0).astype(int)
     abt["Has_Athletic_Catchment"] = (sum_poi(abt, ["stadium", "sports_centre", "pitch", "recreation_center"]) > 0).astype(int)
+
+    # Fill NaN gravity scores for outlets with no nearby POIs
+    gravity_cols = [c for c in abt.columns if c.startswith("gravity_")]
+    for c in gravity_cols:
+        abt[c] = abt[c].fillna(0.0)
+    for c in ["competitive_saturation_index", "latent_opportunity_ratio", 
+              "total_driver_gravity", "is_isolated_goldmine",
+              "comp_saturation_retail", "comp_saturation_food",
+              "competitor_count_flat"]:
+        if c in abt.columns:
+            abt[c] = abt[c].fillna(0)
 
     # ── 4. Temporal Features ──────────────────────────────────────────────────
     logger.info("Processing Temporal Features (Holidays, Seasonality)...")
@@ -143,28 +156,45 @@ def build_model_input(config: dict | None = None) -> None:
     # Weekends & Cultural Months
     abt["Number_of_Weekends"] = abt.apply(lambda row: get_weekend_days(row["Year"], row["Month"]), axis=1)
     abt["Is_Cultural_Month"] = abt["Month"].isin([3, 4]).astype(int)  # March & April
-    
-    # ── 5. The Secret Sauce: Spatio-Temporal Interactions ─────────────────────
-    logger.info("Constructing Spatio-Temporal Interactions...")
-    
-    # 1. The Tuition/Weekend Surge
-    # Logic: (Has High Youth/Education POIs) × (Number of Weekends in the Month)
-    abt["Tuition_Weekend_Surge"] = abt["Has_Youth_Catchment"] * abt["Number_of_Weekends"]
-    
-    # 2. The Tourist Peak Multiplier
-    # Logic: (Has Leisure/Tourist POIs) × (Is High Seasonality for that Province)
-    # We define High Seasonality as Seasonality_Index == 'Favorable'
     abt["Is_High_Season"] = (abt["Seasonality_Index"] == "Favorable").astype(int)
+    
+    # ── 5. Spatio-Temporal Interactions (V2: Binary + Continuous Gravity) ─────
+    logger.info("Constructing Spatio-Temporal Interactions (V2: gravity-enhanced)...")
+    
+    # --- R1 Binary Interactions (backward-compatible) ---
+    # 1. The Tuition/Weekend Surge (binary × int)
+    abt["Tuition_Weekend_Surge"] = abt["Has_Youth_Catchment"] * abt["Number_of_Weekends"]
+    # 2. The Tourist Peak Multiplier (binary × binary)
     abt["Tourist_Peak_Multiplier"] = abt["Has_Leisure_Catchment"] * abt["Is_High_Season"]
-    
     # 3. The Sports & "Big Match" Spike
-    # Logic: (Has Athletic/Grounds POIs) × (Is March or April OR Number of Weekends)
-    # We will use (Is_Cultural_Month * 1.5 + Number_of_Weekends) as the temporal multiplier
     abt["Sports_Big_Match_Spike"] = abt["Has_Athletic_Catchment"] * (abt["Is_Cultural_Month"] * 1.5 + abt["Number_of_Weekends"])
-    
     # 4. The Health/Hospital Pulse
-    # Logic: (Has Health POIs) x (Number of Weekends OR Holidays)
     abt["Health_Catchment_Spike"] = abt["Has_Health_Catchment"] * (abt["Number_of_Weekends"] + abt["Holiday_Count"])
+
+    # --- V2 Continuous Gravity Interactions (NEW for Round 2) ---
+    # These use distance-decay gravity scores instead of binary flags,
+    # giving the model continuous signal strength rather than on/off switches.
+    
+    if "gravity_group_youth" in abt.columns:
+        abt["Tuition_Weekend_Gravity"] = abt["gravity_group_youth"] * abt["Number_of_Weekends"]
+        logger.info("  ✓ Tuition_Weekend_Gravity (continuous)")
+    
+    if "gravity_group_leisure" in abt.columns:
+        abt["Tourist_Peak_Gravity"] = abt["gravity_group_leisure"] * abt["Is_High_Season"]
+        logger.info("  ✓ Tourist_Peak_Gravity (continuous)")
+    
+    if "gravity_group_athletic" in abt.columns:
+        abt["Sports_Match_Gravity"] = abt["gravity_group_athletic"] * (abt["Is_Cultural_Month"] * 1.5 + abt["Number_of_Weekends"])
+        logger.info("  ✓ Sports_Match_Gravity (continuous)")
+    
+    if "gravity_group_health" in abt.columns:
+        abt["Health_Pulse_Gravity"] = abt["gravity_group_health"] * (abt["Number_of_Weekends"] + abt["Holiday_Count"])
+        logger.info("  ✓ Health_Pulse_Gravity (continuous)")
+    
+    # Competitive pressure interaction: high competition × low season = price war signal
+    if "competitive_saturation_index" in abt.columns:
+        abt["Competition_Season_Pressure"] = abt["competitive_saturation_index"] * (1 - abt["Is_High_Season"])
+        logger.info("  ✓ Competition_Season_Pressure (competitive × off-season)")
 
     # ── 6. Censoring Signal Detection (Is_Censored) ───────────────────────────
     logger.info("Computing variance and flagging Censored (flatlining) outlets...")
@@ -177,7 +207,7 @@ def build_model_input(config: dict | None = None) -> None:
     # AND its volume CV is very low (meaning it flatlined, hitting a system constraint limit)
     # AND it has non-zero volume
     
-    # We look at the sum of interaction scores
+    # V2: Use total_driver_gravity (continuous) for more precise censoring detection
     abt["Total_Interaction_Score"] = (
         abt["Tuition_Weekend_Surge"] + 
         abt["Tourist_Peak_Multiplier"] + 
@@ -187,7 +217,12 @@ def build_model_input(config: dict | None = None) -> None:
     
     cv_threshold = config.get("modeling", {}).get("censoring", {}).get("cv_threshold", 0.15)
     is_flatlined = (abt["Volume_CV"] < cv_threshold) & (abt["Total_Volume"] > 0)
-    has_high_demand_signal = abt["Total_Interaction_Score"] > 0
+    
+    # V2: Enhanced censoring — use gravity score OR binary interaction score
+    if "total_driver_gravity" in abt.columns:
+        has_high_demand_signal = (abt["Total_Interaction_Score"] > 0) | (abt["total_driver_gravity"] > 0.5)
+    else:
+        has_high_demand_signal = abt["Total_Interaction_Score"] > 0
     
     abt["Is_Censored"] = (is_flatlined & has_high_demand_signal).astype(int)
     
