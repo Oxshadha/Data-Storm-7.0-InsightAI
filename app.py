@@ -104,7 +104,7 @@ st.markdown(
     }
     </style>
     """,
-    unsafe_allowed_html=True,
+    unsafe_allow_html=True,
 )
 
 # ── Load and Merge Datasets ─────────────────────────────────────────────
@@ -169,7 +169,7 @@ except Exception as e:
 
 # ── Sidebar Filters ─────────────────────────────────────────────────────
 st.sidebar.image("https://img.icons8.com/nolan/96/artificial-intelligence.png", width=64)
-st.sidebar.markdown("<h2 style='color:#e2e8f0;margin-top:0;'>InsightAI Control</h2>", unsafe_allowed_html=True)
+st.sidebar.markdown("<h2 style='color:#e2e8f0;margin-top:0;'>InsightAI Control</h2>", unsafe_allow_html=True)
 
 st.sidebar.subheader("Dataset Filters")
 selected_province = st.sidebar.multiselect(
@@ -242,8 +242,8 @@ if run_reoptimization:
         st.sidebar.success(f"Success! Allocated LKR {spends.sum():,.2f}")
 
 # ── Main Dashboard Layout ───────────────────────────────────────────────
-st.markdown("<div class='dashboard-header'>InsightAI Spatial Intelligence Dashboard</div>", unsafe_allowed_html=True)
-st.markdown("<div class='dashboard-subheader'>Medallion Lakehouse Gold Enrichment & Trade Spend Optimization Framework</div>", unsafe_allowed_html=True)
+st.markdown("<div class='dashboard-header'>InsightAI Spatial Intelligence Dashboard</div>", unsafe_allow_html=True)
+st.markdown("<div class='dashboard-subheader'>Medallion Lakehouse Gold Enrichment & Trade Spend Optimization Framework</div>", unsafe_allow_html=True)
 
 # ── Key Performance Metrics Row ─────────────────────────────────────────
 col1, col2, col3, col4 = st.columns(4)
@@ -257,7 +257,7 @@ with col1:
             <div class="metric-value">{total_pot:,.1f} L</div>
         </div>
         """,
-        unsafe_allowed_html=True,
+        unsafe_allow_html=True,
     )
 
 with col2:
@@ -269,7 +269,7 @@ with col2:
             <div class="metric-value">{total_hist:,.1f} L</div>
         </div>
         """,
-        unsafe_allowed_html=True,
+        unsafe_allow_html=True,
     )
 
 with col3:
@@ -281,7 +281,7 @@ with col3:
             <div class="metric-value">{growth_gap:,.1f} L</div>
         </div>
         """,
-        unsafe_allowed_html=True,
+        unsafe_allow_html=True,
     )
 
 with col4:
@@ -293,7 +293,7 @@ with col4:
             <div class="metric-value">LKR {total_spend:,.2f}</div>
         </div>
         """,
-        unsafe_allowed_html=True,
+        unsafe_allow_html=True,
     )
 
 # ── Section 1: Spatial Map and Demographics ──────────────────────────────
@@ -371,11 +371,11 @@ with det1:
             <strong>Allocated Trade Spend:</strong> LKR {outlet_row['Trade_Spend_Allocation']:,.2f}
         </div>
         """,
-        unsafe_allowed_html=True,
+        unsafe_allow_html=True,
     )
     
     if int(outlet_row["is_isolated_goldmine"]) == 1:
-        st.markdown("<span class='goldmine-badge'>★ ISOLATED GOLDMINE</span>", unsafe_allowed_html=True)
+        st.markdown("<span class='goldmine-badge'>★ ISOLATED GOLDMINE</span>", unsafe_allow_html=True)
 
 with det2:
     st.markdown("### 🤖 Generative AI Explainability (XAI)")
@@ -391,7 +391,7 @@ with det2:
             <p style="margin-top: 10px; font-style: italic; line-height: 1.6;">"{explanation}"</p>
         </div>
         """,
-        unsafe_allowed_html=True,
+        unsafe_allow_html=True,
     )
     
     # Opportunity Gauge
@@ -424,5 +424,5 @@ st.markdown(
     "<div style='text-align: center; color: #64748b; font-size: 12px; padding: 20px;'>"
     "InsightAI Decision Engine &copy; 2026 | Built for Data Storm 7.0"
     "</div>",
-    unsafe_allowed_html=True,
+    unsafe_allow_html=True,
 )
