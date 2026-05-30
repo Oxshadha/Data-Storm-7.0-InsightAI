@@ -89,8 +89,37 @@ def build_model_input(config: dict | None = None) -> None:
 
     # ── 3. Merge Master Data & POIs ───────────────────────────────────────────
     logger.info("Merging Master and POI features...")
-    # Master
+    # Master (left join keeps all transaction outlets, even if missing from cleaned master)
     abt = base_grid.merge(master_df, on="Outlet_ID", how="left")
+    
+    # ── 3a. Impute orphaned outlets (quarantined from master due to null Outlet_Size) ──
+    orphan_mask = abt["Avg_Monthly_Volume"].isna()
+    n_orphan_outlets = abt.loc[orphan_mask, "Outlet_ID"].nunique()
+    if n_orphan_outlets > 0:
+        logger.info(f"Detected {n_orphan_outlets} outlets missing from cleaned master — imputing from transaction behavior...")
+        
+        # Compute Avg_Monthly_Volume from actual transaction records for orphaned outlets
+        orphan_ids = abt.loc[orphan_mask, "Outlet_ID"].unique()
+        orphan_avg = (
+            abt.loc[abt["Outlet_ID"].isin(orphan_ids)]
+            .groupby("Outlet_ID")["Total_Volume"]
+            .mean()
+            .rename("_imputed_avg")
+        )
+        abt = abt.merge(orphan_avg, on="Outlet_ID", how="left")
+        abt.loc[orphan_mask, "Avg_Monthly_Volume"] = abt.loc[orphan_mask, "_imputed_avg"]
+        abt.drop(columns=["_imputed_avg"], inplace=True)
+        
+        # Fill remaining master fields with safe defaults
+        abt["Outlet_Size"] = abt["Outlet_Size"].fillna("Unknown")
+        abt["Cooler_Count"] = abt["Cooler_Count"].fillna(0)
+        abt["Outlet_Type"] = abt["Outlet_Type"].fillna("Unknown")
+        abt["Dynamic_Tier"] = abt["Dynamic_Tier"].fillna("Tier-4")
+        
+        # Fallback: if Avg_Monthly_Volume is still NaN (brand new outlet with no history), set to 0
+        abt["Avg_Monthly_Volume"] = abt["Avg_Monthly_Volume"].fillna(0.0)
+        
+        logger.info(f"  → Recovered {n_orphan_outlets} outlets with imputed profiles (Avg_Monthly_Volume from transactions)")
     
     # POIs (V2: now includes both flat counts AND gravity scores)
     abt = abt.merge(poi_df, on="Outlet_ID", how="left")
@@ -106,21 +135,30 @@ def build_model_input(config: dict | None = None) -> None:
     # High Footfall Drivers (Catchments) - Numerical
     if "poi_driver_catchment" not in abt.columns:
         abt["poi_driver_catchment"] = sum_poi(abt, [
-            "school", "education", "park", "beach", "hospital", 
-            "transport_hub", "stadium", "gym", "leisure", "sports_center", "railway_station"
+            "school", "education", "preschool", "college_university", "educational_services",
+            "park", "beach", "playground", "national_park",
+            "hospital", "bus_station", "train_station", "gym",
+            "stadium_arena", "cricket_ground", "sports_and_recreation_venue",
+            "buddhist_temple", "hindu_temple", "mosque", "church_cathedral", "catholic_church",
+            "landmark_and_historical_building"
         ])
     abt["Has_High_Footfall_Catchment"] = (abt["poi_driver_catchment"] > 0).astype(int)
     
-    # Competitive Cannibalization Risks (Supermarkets, Restaurants, Cafes) - Numerical
+    # Competitive Cannibalization Risks - Numerical
     if "poi_cannibal_risk" not in abt.columns:
-        abt["poi_cannibal_risk"] = sum_poi(abt, ["supermarket", "restaurant", "cafe", "convenience_store"])
+        abt["poi_cannibal_risk"] = sum_poi(abt, [
+            "supermarket", "restaurant", "cafe", "convenience_store", "grocery_store",
+            "hotel", "bakery", "accommodation", "resort", "bar", "liquor_store"
+        ])
     abt["Has_Cannibalization_Risk"] = (abt["poi_cannibal_risk"] > 0).astype(int)
     
     # Keep specific ones for interactions (binary flags from flat counts)
-    abt["Has_Youth_Catchment"] = (sum_poi(abt, ["school", "education"]) > 0).astype(int)
-    abt["Has_Leisure_Catchment"] = (sum_poi(abt, ["park", "beach"]) > 0).astype(int)
+    abt["Has_Youth_Catchment"] = (sum_poi(abt, ["school", "education", "preschool", "college_university", "educational_services"]) > 0).astype(int)
+    abt["Has_Leisure_Catchment"] = (sum_poi(abt, ["park", "beach", "playground", "national_park"]) > 0).astype(int)
     abt["Has_Health_Catchment"] = (sum_poi(abt, ["hospital"]) > 0).astype(int)
-    abt["Has_Athletic_Catchment"] = (sum_poi(abt, ["stadium", "sports_centre", "pitch", "recreation_center"]) > 0).astype(int)
+    abt["Has_Athletic_Catchment"] = (sum_poi(abt, ["gym", "stadium_arena", "cricket_ground", "sports_club_and_league", "sports_and_recreation_venue"]) > 0).astype(int)
+    abt["Has_Religious_Catchment"] = (sum_poi(abt, ["buddhist_temple", "hindu_temple", "mosque", "church_cathedral", "catholic_church"]) > 0).astype(int)
+    abt["Has_Tourist_Catchment"] = (sum_poi(abt, ["landmark_and_historical_building"]) > 0).astype(int)
 
     # Fill NaN gravity scores for outlets with no nearby POIs
     gravity_cols = [c for c in abt.columns if c.startswith("gravity_")]

@@ -34,18 +34,26 @@ logger = get_logger("gold.feature_poi")
 
 # ── Configuration Constants ────────────────────────────────────────────────
 # Semantic grouping of POI categories for feature engineering
+# Labels MUST match actual Overture Maps taxonomy for Sri Lanka
 
 CATCHMENT_DRIVERS = {
-    "youth":     ["school", "education"],
+    "youth":     ["school", "education", "preschool", "college_university", "educational_services"],
     "health":    ["hospital"],
-    "leisure":   ["park", "beach"],
-    "transit":   ["transport_hub", "railway_station"],
-    "athletic":  ["stadium", "sports_centre", "pitch", "recreation_center", "gym"],
+    "leisure":   ["park", "beach", "playground", "national_park"],
+    "transit":   ["bus_station", "train_station", "transportation", "gas_station"],
+    "athletic":  ["gym", "stadium_arena", "sports_club_and_league",
+                  "cricket_ground", "sports_and_recreation_venue"],
+    "religious": ["buddhist_temple", "hindu_temple", "mosque",
+                  "church_cathedral", "catholic_church"],
+    "tourist":   ["landmark_and_historical_building"],
+    "nightlife": ["liquor_store"],
 }
 
 COMPETITORS = {
-    "retail":    ["supermarket", "convenience_store"],
-    "food":      ["restaurant", "cafe", "eatery"],
+    "retail":    ["supermarket", "convenience_store", "grocery_store"],
+    "food":      ["restaurant", "cafe", "bakery"],
+    "hospitality": ["hotel", "accommodation", "resort"],
+    "liquor":    ["bar"],
 }
 
 
