@@ -86,7 +86,7 @@ def _generate_fallback_narrative(context: dict) -> str:
     else:
         risk_text = f"This prediction is calculated using a strict 90% statistical confidence interval. In simple business terms, the AI is 90% certain that even if we flood this outlet with unlimited coolers and supply, it will not exceed {pot:,.1f} L/month. Because the expected return does not justify the cost of deployment, investing capital here carries an **Unfavorable Risk Profile** compared to better opportunities in the network."
         
-    p4 = f"<br><br>**Decision Confidence & Risk Assessment:**<br><span style='color: #cbd5e1; font-style: italic;'>{risk_text}</span>"
+    p4 = f"<br><br>**Decision Confidence & Risk Assessment:**<br>*{risk_text}*"
     
     return p1 + p2 + p3 + p4
 

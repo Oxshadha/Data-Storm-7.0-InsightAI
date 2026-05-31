@@ -26,6 +26,13 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+    /* Hide Streamlit Running Man Animation */
+    [data-testid="stStatusWidget"] {
+        visibility: hidden !important;
+        height: 0%;
+        position: fixed;
+    }
+    
     /* Dark Premium Styling */
     .stApp {
         background: linear-gradient(135deg, #0e121a 0%, #151a26 100%);
@@ -206,9 +213,10 @@ selected_distributor = st.sidebar.multiselect(
 funded_only = st.sidebar.checkbox("Show Only Funded Outlets", value=False)
 
 # Live Scenario Planning Expander
-with st.sidebar.expander("🔧 Live Scenario Planning", expanded=False):
+with st.sidebar.expander(":material/build: Live Scenario Planning", expanded=False):
     st.markdown("Run MILP solver dynamically to adjust budgets.")
-    optim_budget = st.slider("Total Budget (LKR)", min_value=1_000_000, max_value=10_000_000, value=5_000_000, step=500_000)
+    optim_budget_m = st.slider("Total Budget (LKR)", min_value=1.0, max_value=10.0, value=5.0, step=0.5, format="%.1fM")
+    optim_budget = int(optim_budget_m * 1_000_000)
     
     if st.button("Re-solve MILP", use_container_width=True):
         with st.spinner("Solving MILP Knapsack Problem (~4.5s)..."):
