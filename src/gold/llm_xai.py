@@ -49,19 +49,19 @@ def _generate_fallback_narrative(context: dict) -> str:
     
     cooler_count = context.get("cooler_count", 0)
     
-    # 1. Sales Prediction & Constraints
-    p1 = f"**1. Sales Prediction & Constraints:**<br>Outlet {outlet_id} is a {tier} retailer currently constrained to a historical average of {hist_avg:,.1f} L/month. With {cooler_count} coolers deployed, the model predicts a True Market Potential of **{pot:,.1f} L/month**, representing a **{growth_pct}** expansion if supply caps are removed."
+    # 1. Why score
+    p1 = f"**Why the model assigned this specific score:**<br>Outlet {outlet_id} is a {tier} retailer currently constrained to a historical average of {hist_avg:,.1f} L/month. With {cooler_count} coolers deployed, the model predicts a True Market Potential of **{pot:,.1f} L/month**, representing a **{growth_pct}** expansion if supply caps are removed."
     
-    # 2. Local Environment & Competition
+    # 2. Local conditions and constraints
     if is_goldmine:
         env_text = "This location operates in an **Untapped High-Traffic Zone** with zero direct competitors within a 1km radius, offering a rare monopoly advantage."
     elif comp_density > 0.05:
         env_text = "The outlet operates in a highly saturated competitive zone, meaning any investment here is highly defensive and requires aggressive market share capture."
     else:
         env_text = "The location holds a balanced spatial footprint with moderate competitive exposure."
-    p2 = f"<br><br>**2. Local Environment & Competition:**<br>{env_text}"
+    p2 = f"<br><br>**How local conditions and constraints influenced the result:**<br>{env_text}"
     
-    # 3. Key Model Drivers
+    # 3. Factors increasing/decreasing prediction
     if top_drivers:
         driver_names = [f"{d[0]} (Score: {d[1]:.1f})" for d in top_drivers[:2] if d[1] > 0]
         if driver_names:
@@ -77,7 +77,7 @@ def _generate_fallback_narrative(context: dict) -> str:
     else:
         rec_text = "No additional budget allocated. Maintain standard distribution."
         
-    p3 = f"<br><br>**3. Key Model Drivers & Recommendation:**<br>{driver_text} {rec_text}"
+    p3 = f"<br><br>**Which factors increased or decreased the prediction:**<br>{driver_text} {rec_text}"
     
     return p1 + p2 + p3
 
@@ -129,12 +129,12 @@ Decision Engine Reason: {context.get('funding_reason', 'N/A')}
 
 RULES:
 1. Do NOT use data science jargon (no 'SHAP', 'MILP', 'Decensoring').
-2. You MUST structure your response into exactly three sections using bold HTML breaks or Markdown headers:
-   **1. Sales Prediction & Constraints:** (Explain the gap between historical caps/coolers and predicted potential).
+2. You MUST structure your response into exactly three sections using bold HTML breaks or Markdown headers exactly as follows:
+   **Why the model assigned this specific score:** (Explain the gap between historical caps/coolers and predicted potential).
    <br><br>
-   **2. Local Environment & Competition:** (Explain spatial mapping and competition intensity).
+   **How local conditions and constraints influenced the result:** (Explain spatial mapping and competition intensity).
    <br><br>
-   **3. Key Model Drivers & Recommendation:** (Explain which POI drivers pushed the score up/down, and conclude with the investment ROI).
+   **Which factors increased or decreased the prediction:** (Explain which POI drivers pushed the score up/down, and conclude with the investment ROI).
 3. Be confident, concise, and business-focused.
 4. Bold key metrics for visual emphasis.
 """

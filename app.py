@@ -697,9 +697,6 @@ if outlet_id in df["Outlet_ID"].values:
         with st.spinner("Analyzing location..."):
             explanation = explain_outlet(context)
             
-        st.markdown('<div class="xai-box"><strong>Model Decisional Insights:</strong></div>', unsafe_allow_html=True)
-        st.markdown(explanation, unsafe_allow_html=True)
-        
         # Single outlet radar
         if gravity_cols:
             single_grav = [float(outlet_row.get(c, 0.0)) for c in gravity_cols]
@@ -720,6 +717,10 @@ if outlet_id in df["Outlet_ID"].values:
             
             with st.expander(":material/lightbulb: How to read this Radar Chart"):
                 st.write("**Insight:** The orange polygon maps this outlet's unique spatial demographic pull against the network average (gray line). Massive spikes indicate a highly concentrated local audience (e.g., Youth, Tourist, Transit) that the AI identified as a key driver for latent volume potential.")
+
+    st.markdown('<br>', unsafe_allow_html=True)
+    st.markdown('<div class="xai-box" style="padding: 20px; background-color: #0f172a; border-radius: 8px; border-left: 4px solid #f59e0b;"><strong>Model Decisional Insights:</strong></div>', unsafe_allow_html=True)
+    st.markdown(explanation, unsafe_allow_html=True)
 
 else:
     st.warning("Outlet ID not found in dataset.")
