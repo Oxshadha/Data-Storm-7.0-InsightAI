@@ -404,14 +404,12 @@ with tab1:
         tooltip=tooltip
     ), use_container_width=True)
     
-    # ── Charts 2, 3, 4, 5 ───────────────────────────────────────────────
-    col1a, col1b = st.columns(2)
+    # ── Grid Layout: Row 1 ───────────────────────────────────────────────
+    r1_col1, r1_col2 = st.columns(2)
     funded_df = filtered_df[filtered_df["Trade_Spend_Allocation"] > 0].copy()
     
-    with col1a:
-        # Budget Waterfall
+    with r1_col1:
         st.markdown("### Budget Allocation Waterfall")
-        
         tier3_spend = funded_df[funded_df["Trade_Spend_Allocation"] == 15000]["Trade_Spend_Allocation"].sum()
         tier2_spend = funded_df[funded_df["Trade_Spend_Allocation"] == 40000]["Trade_Spend_Allocation"].sum()
         tier1_spend = funded_df[funded_df["Trade_Spend_Allocation"] == 90000]["Trade_Spend_Allocation"].sum()
@@ -419,47 +417,40 @@ with tab1:
         fig_waterfall = go.Figure(go.Waterfall(
             orientation="v",
             measure=["absolute", "relative", "relative", "relative", "total"],
-            x=["Total Budget", "Tier 3 (Merch)", "Tier 2 (Refurb)", "Tier 1 (Cooler)", "Allocated"],
+            x=["Total Budget", "Tier 3", "Tier 2", "Tier 1", "Allocated"],
             y=[total_spend, -tier3_spend, -tier2_spend, -tier1_spend, 0],
             connector={"line": {"color": "rgb(63, 63, 63)"}},
             decreasing={"marker": {"color": "#3b82f6"}},
             totals={"marker": {"color": "#94a3b8"}}
         ))
-        fig_waterfall.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
+        fig_waterfall.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", height=350, margin=dict(t=30, b=20, l=10, r=10))
         st.plotly_chart(fig_waterfall, use_container_width=True)
+
+    with r1_col2:
+        st.markdown("### ROI Comparison by Package Tier")
+        tier_stats = funded_df.groupby("Trade_Spend_Allocation").agg(
+            Spend=("Trade_Spend_Allocation", "sum"),
+            Lift=("Volume_Lift", "sum")
+        ).reset_index()
+        tier_stats["ROI"] = tier_stats["Lift"] / (tier_stats["Spend"] / 1000)
+        tier_stats["Tier Name"] = tier_stats["Trade_Spend_Allocation"].map({15000: "Tier 3", 40000: "Tier 2", 90000: "Tier 1"})
         
-        # Funded vs Unfunded Distribution (Overlapping Histogram)
-        st.markdown("### Outlet Potential Distribution")
-        
-        filtered_df["Status"] = filtered_df["Trade_Spend_Allocation"].apply(lambda x: "Funded" if x > 0 else "Unfunded")
-        
-        fig_dist = px.histogram(
-            filtered_df, 
-            x="Maximum_Monthly_Liters", 
-            color="Status",
-            barmode="overlay",
-            color_discrete_map={"Unfunded": "#475569", "Funded": "#10b981"},
-            nbins=50
+        fig_roi = px.bar(tier_stats, y="Tier Name", x="ROI", orientation='h', text="ROI", color_discrete_sequence=["#22d3ee"])
+        fig_roi.update_traces(texttemplate='%{text:.1f}', textposition='outside')
+        fig_roi.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", 
+            xaxis_title="Liters Lift per 1,000 LKR", yaxis_title="",
+            height=350, margin=dict(t=30, b=20, l=10, r=10)
         )
-        
-        fig_dist.update_layout(
-            xaxis_title="Predicted True Potential (Liters)",
-            yaxis_title="Count",
-            paper_bgcolor="rgba(0,0,0,0)", 
-            plot_bgcolor="rgba(0,0,0,0)", 
-            font_color="#e2e8f0",
-            legend_title="",
-            legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99)
-        )
-        st.plotly_chart(fig_dist, use_container_width=True)
-        
-        with st.expander("💡 How to read this chart"):
-            st.write("This histogram shows the distribution of predicted True Market Potential across the network. Notice how the green 'Funded' outlets are isolated across the long tail, proving the algorithm prioritizes pure ROI over sheer size.")
-        
-    with col1b:
-        # Strategic ROI (Average Volume Lift)
+        st.plotly_chart(fig_roi, use_container_width=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # ── Grid Layout: Row 2 ───────────────────────────────────────────────
+    r2_col1, r2_col2 = st.columns(2)
+
+    with r2_col1:
         st.markdown("### Strategic ROI (Average Volume Lift)")
-        
         lift_df = filtered_df.copy()
         lift_df["Status"] = lift_df["Trade_Spend_Allocation"].apply(lambda x: "Funded" if x > 0 else "Unfunded")
         lift_stats = lift_df.groupby("Status")["Volume_Lift"].mean().reset_index()
@@ -474,42 +465,69 @@ with tab1:
             color_discrete_map={"Unfunded": "#475569", "Funded": "#10b981"},
             text_auto=".1f"
         )
-        
         fig_roi_bar.update_layout(
-            xaxis_title="Average Expected Volume Lift (Liters)",
+            xaxis_title="Average Lift (L)",
             yaxis_title="",
             paper_bgcolor="rgba(0,0,0,0)", 
             plot_bgcolor="rgba(0,0,0,0)", 
             font_color="#e2e8f0",
             showlegend=False,
-            height=220,
-            margin=dict(t=10, b=10)
+            height=350,
+            margin=dict(t=30, b=20, l=10, r=10)
         )
         st.plotly_chart(fig_roi_bar, use_container_width=True)
-        
-        # Tier ROI Comparison
 
-        st.markdown("### ROI Comparison by Package Tier")
-        tier_stats = funded_df.groupby("Trade_Spend_Allocation").agg(
-            Spend=("Trade_Spend_Allocation", "sum"),
-            Lift=("Volume_Lift", "sum")
-        ).reset_index()
-        tier_stats["ROI"] = tier_stats["Lift"] / (tier_stats["Spend"] / 1000)
-        tier_stats["Tier Name"] = tier_stats["Trade_Spend_Allocation"].map({15000: "Tier 3", 40000: "Tier 2", 90000: "Tier 1"})
-        
-        fig_roi = px.bar(tier_stats, y="Tier Name", x="ROI", orientation='h', text="ROI",
-                         color_discrete_sequence=["#22d3ee"], title="Liters Lift per 1,000 LKR")
-        fig_roi.update_traces(texttemplate='%{text:.1f}', textposition='outside')
-        fig_roi.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
-        st.plotly_chart(fig_roi, use_container_width=True)
-        
-        # Distributor Split
+    with r2_col2:
+        st.markdown("### Outlet Potential Distribution")
+        filtered_df["Status"] = filtered_df["Trade_Spend_Allocation"].apply(lambda x: "Funded" if x > 0 else "Unfunded")
+        fig_dist = px.histogram(
+            filtered_df, 
+            x="Maximum_Monthly_Liters", 
+            color="Status",
+            barmode="overlay",
+            color_discrete_map={"Unfunded": "#475569", "Funded": "#10b981"},
+            nbins=50
+        )
+        fig_dist.update_layout(
+            xaxis_title="Predicted True Potential (Liters)",
+            yaxis_title="Count",
+            paper_bgcolor="rgba(0,0,0,0)", 
+            plot_bgcolor="rgba(0,0,0,0)", 
+            font_color="#e2e8f0",
+            legend_title="",
+            legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99),
+            height=350,
+            margin=dict(t=30, b=20, l=10, r=10)
+        )
+        st.plotly_chart(fig_dist, use_container_width=True)
+        with st.expander(":material/lightbulb: How to read this chart"):
+            st.write("This histogram shows the distribution of predicted True Market Potential across the network. Notice how the green 'Funded' outlets are isolated across the long tail, proving the algorithm prioritizes pure ROI over sheer size.")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Grid Layout: Row 3 ───────────────────────────────────────────────
+    r3_col1, r3_col2 = st.columns(2)
+
+    with r3_col1:
         st.markdown("### Spend Distribution by Hub")
         dist_stats = funded_df.groupby("Distributor_ID")["Trade_Spend_Allocation"].sum().reset_index()
         fig_distr = px.pie(dist_stats, values="Trade_Spend_Allocation", names="Distributor_ID", hole=0.4,
                            color_discrete_sequence=["#3b82f6", "#8b5cf6", "#14b8a6"])
-        fig_distr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
+        fig_distr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", height=350, margin=dict(t=30, b=20, l=10, r=10))
         st.plotly_chart(fig_distr, use_container_width=True)
+
+    with r3_col2:
+        st.markdown("### Targeted Expansion")
+        funded_df["Goldmine_Label"] = funded_df["is_isolated_goldmine"].map({1: "Isolated Goldmines", 0: "Saturated Clusters"})
+        goldmine_counts = funded_df["Goldmine_Label"].value_counts().reset_index()
+        goldmine_counts.columns = ["Target Type", "Count"]
+        
+        fig_goldmine = px.pie(goldmine_counts, values="Count", names="Target Type", hole=0.4,
+                           color_discrete_sequence=["#f59e0b", "#475569"])
+        fig_goldmine.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", height=350, margin=dict(t=30, b=20, l=10, r=10))
+        st.plotly_chart(fig_goldmine, use_container_width=True)
+        with st.expander(":material/lightbulb: How to read this chart"):
+            st.write("**Insight:** To prevent self-cannibalization, the algorithm deliberately hunted for 'Isolated Goldmines' (high potential shops located far away from current high-volume hubs).")
 
 with tab2:
     col2a, col2b = st.columns(2)
@@ -529,7 +547,7 @@ with tab2:
         fig_scatter.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
         st.plotly_chart(fig_scatter, use_container_width=True)
         
-        with st.expander("💡 How to read this chart"):
+        with st.expander(":material/lightbulb: How to read this chart"):
             st.write("**Insight:** The vertical banding shows rigid, historical quotas capping true potential. The LightGBM model decensored these limits using spatial features, fanning the predictions into a natural, continuous distribution.")
         
         # Competitive Saturation
@@ -540,7 +558,7 @@ with tab2:
         fig_comp.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
         st.plotly_chart(fig_comp, use_container_width=True)
         
-        with st.expander("💡 How to read this chart"):
+        with st.expander(":material/lightbulb: How to read this chart"):
             saturated_pct = (len(sat_df) / max(1, len(filtered_df))) * 100
             st.write(f"**Insight:** Approximately {saturated_pct:.1f}% of the network is operating in a competitive zone. The MILP optimizer actively avoids the red saturated region to prevent self-cannibalization and ensure high marginal ROI.")
         
@@ -574,7 +592,7 @@ with tab2:
 
 # ── Drill-Down Panel ────────────────────────────────────────────────────
 st.markdown("---")
-st.markdown("### 🔍 Generative AI Decision Explainer")
+st.markdown("### :material/smart_toy: Generative AI Decision Explainer")
 
 search_col, _ = st.columns([1, 2])
 with search_col:
@@ -582,7 +600,9 @@ with search_col:
     def update_selected():
         st.session_state.selected_outlet = st.session_state._outlet_input
     
-    st.text_input("Enter Outlet ID to inspect:", value=st.session_state.selected_outlet, key="_outlet_input", on_change=update_selected)
+    outlet_list = ["OUT_08605"] + sorted(list(df["Outlet_ID"].unique()))
+    default_idx = outlet_list.index(st.session_state.selected_outlet) if st.session_state.selected_outlet in outlet_list else 0
+    st.selectbox("Search or Select Outlet ID:", options=outlet_list, index=default_idx, key="_outlet_input", on_change=update_selected)
 
 outlet_id = st.session_state.selected_outlet
 if outlet_id in df["Outlet_ID"].values:
@@ -705,6 +725,9 @@ if outlet_id in df["Outlet_ID"].values:
                 margin=dict(l=30, r=30, t=30, b=30)
             )
             st.plotly_chart(fig_radar_single, use_container_width=True)
+            
+            with st.expander(":material/lightbulb: How to read this Radar Chart"):
+                st.write("**Insight:** The orange polygon maps this outlet's unique spatial demographic pull against the network average (gray line). Massive spikes indicate a highly concentrated local audience (e.g., Youth, Tourist, Transit) that the AI identified as a key driver for latent volume potential.")
 
 else:
     st.warning("Outlet ID not found in dataset.")
