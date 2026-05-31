@@ -436,12 +436,22 @@ with tab1:
         fig_waterfall.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
         st.plotly_chart(fig_waterfall, use_container_width=True)
         
-        # Funded vs Unfunded Distribution
+        # Funded vs Unfunded Distribution (Box Plot for Executive Readability)
         st.markdown("### Outlet Potential Distribution")
+        
+        filtered_df["Status"] = filtered_df["Trade_Spend_Allocation"].apply(lambda x: "Funded (Top 2.7%)" if x > 0 else "Unfunded (Ignored)")
+        
         fig_dist = go.Figure()
-        fig_dist.add_trace(go.Histogram(x=filtered_df[filtered_df["Trade_Spend_Allocation"] == 0]["Maximum_Monthly_Liters"], name="Unfunded", marker_color="#475569", opacity=0.5))
-        fig_dist.add_trace(go.Histogram(x=filtered_df[filtered_df["Trade_Spend_Allocation"] > 0]["Maximum_Monthly_Liters"], name="Funded", marker_color="#10b981", opacity=0.8))
-        fig_dist.update_layout(barmode='overlay', paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
+        fig_dist.add_trace(go.Box(y=filtered_df[filtered_df["Status"] == "Unfunded (Ignored)"]["Maximum_Monthly_Liters"], name="Unfunded (Ignored)", marker_color="#475569"))
+        fig_dist.add_trace(go.Box(y=filtered_df[filtered_df["Status"] == "Funded (Top 2.7%)"]["Maximum_Monthly_Liters"], name="Funded (Top 2.7%)", marker_color="#10b981"))
+        
+        fig_dist.update_layout(
+            yaxis_title="Predicted True Potential (Liters)",
+            paper_bgcolor="rgba(0,0,0,0)", 
+            plot_bgcolor="rgba(0,0,0,0)", 
+            font_color="#e2e8f0",
+            showlegend=False
+        )
         st.plotly_chart(fig_dist, use_container_width=True)
         
     with col1b:
