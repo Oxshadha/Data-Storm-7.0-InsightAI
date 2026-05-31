@@ -26,7 +26,7 @@ for k in k_range:
 
 plt.figure(figsize=(8, 5))
 plt.plot(k_range, sse, 'bo-')
-plt.axvline(x=30, color='r', linestyle='--', label='Selected k=30 (Micro-Segments)')
+plt.axvline(x=8, color='r', linestyle='--', label='Selected k=8 (Optimal)')
 plt.title("Elbow Method Validation")
 plt.xlabel("Number of Clusters (k)")
 plt.ylabel("Sum of Squared Errors (SSE)")

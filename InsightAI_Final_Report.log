@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  31 MAY 2026 15:30
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  1 JUN 2026 01:08
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -330,8 +330,7 @@ ef
 File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count302
 \l__pdf_internal_box=\box56
-)
-No file InsightAI_Final_Report.aux.
+) (./InsightAI_Final_Report.aux)
 \openout1 = `InsightAI_Final_Report.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 18.
@@ -352,6 +351,7 @@ LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 18.
 LaTeX Font Info:    ... okay on input line 18.
 LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 18.
 LaTeX Font Info:    ... okay on input line 18.
+
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -411,6 +411,7 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
 Package hyperref Info: Link coloring OFF on input line 18.
+ (./InsightAI_Final_Report.out) (./InsightAI_Final_Report.out)
 \@outlinefile=\write3
 \openout3 = `InsightAI_Final_Report.out'.
 
@@ -445,11 +446,17 @@ been already used, duplicate ignored
                    \relax 
 l.63 
       [1]
+Overfull \hbox (24.96909pt too wide) in paragraph at lines 74--74
+[]\OT1/cmr/bx/n/14.4 Portfolio Cor-rec-tion via Re-gional Grouped Im-pu-ta-tion
+ (Micro-Segment
+ []
+
+
 
 [2]
 
 LaTeX Warning: File `plots/plot_2_spatial_hotspots.png' not found on input line
- 101.
+ 103.
 
 
 ! Package pdftex.def Error: File `plots/plot_2_spatial_hotspots.png' not found:
@@ -459,7 +466,7 @@ See the pdftex.def package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.101 ...width]{plots/plot_2_spatial_hotspots.png}
+l.103 ...width]{plots/plot_2_spatial_hotspots.png}
                                                   
 Try typing  <return>  to proceed.
 If that doesn't work, type  X <return>  to quit.
@@ -468,7 +475,7 @@ If that doesn't work, type  X <return>  to quit.
 
 [3]
 
-LaTeX Warning: File `plots/plot_5_elbow_method.png' not found on input line 115
+LaTeX Warning: File `plots/plot_5_elbow_method.png' not found on input line 117
 .
 
 
@@ -479,22 +486,25 @@ See the pdftex.def package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.115 ...linewidth]{plots/plot_5_elbow_method.png}
+l.117 ...linewidth]{plots/plot_5_elbow_method.png}
                                                   
 Try typing  <return>  to proceed.
 If that doesn't work, type  X <return>  to quit.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 120.
+(hyperref)                removing `math shift' on input line 122.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 120.
+(hyperref)                removing `math shift' on input line 122.
 
+
+
+[4]
 
 LaTeX Warning: File `plots/plot_3_feature_importance.png' not found on input li
-ne 127.
+ne 129.
 
 
 ! Package pdftex.def Error: File `plots/plot_3_feature_importance.png' not foun
@@ -504,17 +514,14 @@ See the pdftex.def package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.127 ...dth]{plots/plot_3_feature_importance.png}
+l.129 ...dth]{plots/plot_3_feature_importance.png}
                                                   
 Try typing  <return>  to proceed.
 If that doesn't work, type  X <return>  to quit.
 
 
-
-[4]
-
 LaTeX Warning: File `plots/plot_4_scatter_unconstrained.png' not found on input
- line 139.
+ line 141.
 
 
 ! Package pdftex.def Error: File `plots/plot_4_scatter_unconstrained.png' not f
@@ -524,7 +531,7 @@ See the pdftex.def package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.139 ...]{plots/plot_4_scatter_unconstrained.png}
+l.141 ...]{plots/plot_4_scatter_unconstrained.png}
                                                   
 Try typing  <return>  to proceed.
 If that doesn't work, type  X <return>  to quit.
@@ -535,7 +542,48 @@ If that doesn't work, type  X <return>  to quit.
 
 [6]
 
-[7] (./InsightAI_Final_Report.aux)
+LaTeX Warning: File `plots/plot_6_budget_allocation.png' not found on input lin
+e 195.
+
+
+! Package pdftex.def Error: File `plots/plot_6_budget_allocation.png' not found
+: using draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.195 ...idth]{plots/plot_6_budget_allocation.png}
+                                                  
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+LaTeX Warning: File `plots/plot_7_roi_yield.png' not found on input line 200.
+
+
+! Package pdftex.def Error: File `plots/plot_7_roi_yield.png' not found: using 
+draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.200 ...h=\linewidth]{plots/plot_7_roi_yield.png}
+                                                  
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+
+[7]
+Underfull \hbox (badness 4279) in paragraph at lines 237--237
+[]\OT1/cmr/bx/n/8 3. Ex-plain-able AI
+ []
+
+
+
+[8] (./InsightAI_Final_Report.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
@@ -550,17 +598,17 @@ Package rerunfilecheck Warning: File `InsightAI_Final_Report.out' has changed.
 (rerunfilecheck)                or use package `bookmark'.
 
 Package rerunfilecheck Info: Checksums for `InsightAI_Final_Report.out':
-(rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  4AC0EAF822864677F5680EF3E79D86CB;5979.
+(rerunfilecheck)             Before: 4AC0EAF822864677F5680EF3E79D86CB;5979
+(rerunfilecheck)             After:  B74C1BE7C9AD2EBFEEC6F9C7FA56D1A8;6043.
  ) 
 Here is how much of TeX's memory you used:
- 10337 strings out of 474662
- 165213 string characters out of 5751109
- 571759 words of memory out of 5000000
- 33236 multiletter control sequences out of 15000+600000
- 565685 words of font info for 60 fonts, out of 8000000 for 9000
+ 10440 strings out of 474662
+ 168359 string characters out of 5751109
+ 568716 words of memory out of 5000000
+ 33327 multiletter control sequences out of 15000+600000
+ 566304 words of font info for 62 fonts, out of 8000000 for 9000
  319 hyphenation exceptions out of 8191
- 75i,12n,79p,1274b,513s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,12n,79p,1280b,501s stack positions out of 10000i,1000n,20000p,200000b,200000s
  </Users/k.e.oshada/Library/texlive/2025basic/texmf-var/fonts/pk/ljfour/jknap
 pen/ec/tcrm1000.600pk></usr/local/texlive/2025basic/texmf-dist/fonts/type1/publ
 ic/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2025basic/texmf-dist/fonts/type1/
@@ -570,22 +618,19 @@ pe1/public/amsfonts/cm/cmbx8.pfb></usr/local/texlive/2025basic/texmf-dist/fonts
 onts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2025basic/texmf-di
 st/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2025basic/texm
 f-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/local/texlive/2025basic/t
-exmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2025basi
-c/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2025b
-asic/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/20
-25basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive
-/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texl
-ive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/te
-xlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/
-texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/lo
-cal/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr
-/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb><
-/usr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.p
-fb>
-Output written on InsightAI_Final_Report.pdf (8 pages, 261942 bytes).
+exmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2025basi
+c/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2025b
+asic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/20
+25basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/
+2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texliv
+e/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/te
+xlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local
+/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/l
+ocal/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
+Output written on InsightAI_Final_Report.pdf (9 pages, 246960 bytes).
 PDF statistics:
- 176 PDF objects out of 1000 (max. 8388607)
- 127 compressed objects within 2 object streams
- 37 named destinations out of 1000 (max. 500000)
- 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 240 PDF objects out of 1000 (max. 8388607)
+ 194 compressed objects within 2 object streams
+ 41 named destinations out of 1000 (max. 500000)
+ 177 words of extra memory for PDF output out of 10000 (max. 10000000)
 

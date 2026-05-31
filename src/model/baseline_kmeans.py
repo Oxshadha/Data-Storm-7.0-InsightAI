@@ -72,7 +72,8 @@ def run_baseline_model(config: dict | None = None) -> None:
 
     # 4. K-Means Clustering
     logger.info("Running K-Means with 30 clusters (this may take a moment)...")
-    kmeans = KMeans(n_clusters=30, random_state=42, n_init=10)
+    # Update based on Statistical Validation: Elbow method indicated k=8
+    kmeans = KMeans(n_clusters=8, random_state=42, n_init=10)
     abt["Cluster_ID"] = kmeans.fit_predict(X_scaled)
     
     # 5. Calculate 90th Percentile per Cluster on UNCENSORED shops
