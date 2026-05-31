@@ -303,33 +303,10 @@ total_lift = filtered_df[filtered_df["Trade_Spend_Allocation"] > 0]["Volume_Lift
 total_funded = (filtered_df["Trade_Spend_Allocation"] > 0).sum()
 avg_roi = (total_lift / (total_spend / 1000)) if total_spend > 0 else 0
 
-kpi1.markdown(f"""
-    <div class="saas-card">
-        <div class="metric-label">Budget Deployed</div>
-        <div class="metric-value">LKR {total_spend:,.0f}</div>
-    </div>
-""", unsafe_allow_html=True)
-
-kpi2.markdown(f"""
-    <div class="saas-card">
-        <div class="metric-label">Total Volume Lift</div>
-        <div class="metric-value">{total_lift:,.0f} L</div>
-    </div>
-""", unsafe_allow_html=True)
-
-kpi3.markdown(f"""
-    <div class="saas-card">
-        <div class="metric-label">Avg ROI (Liters per 1K LKR)</div>
-        <div class="metric-value">{avg_roi:,.1f}</div>
-    </div>
-""", unsafe_allow_html=True)
-
-kpi4.markdown(f"""
-    <div class="saas-card">
-        <div class="metric-label">Outlets Funded</div>
-        <div class="metric-value">{total_funded:,}</div>
-    </div>
-""", unsafe_allow_html=True)
+kpi1.metric("Budget Deployed", f"LKR {total_spend:,.0f}", help="Total amount of Trade Marketing spend allocated across the network.")
+kpi2.metric("Total Volume Lift", f"{total_lift:,.0f} L", help="Expected incremental volume generated above historical baseline.")
+kpi3.metric("Avg ROI (Liters per 1K LKR)", f"{avg_roi:,.1f}", help="Liters of incremental volume gained per 1,000 LKR spent.")
+kpi4.metric("Outlets Funded", f"{total_funded:,}", help="Total number of outlets selected for investment by the MILP optimizer.")
 
 # ── Tabs ────────────────────────────────────────────────────────────────
 tab1, tab2 = st.tabs(["Strategy & Execution", "Technical Analytics"])
@@ -476,6 +453,9 @@ with tab1:
         )
         st.plotly_chart(fig_dist, use_container_width=True)
         
+        with st.expander("💡 How to read this chart"):
+            st.write("This histogram shows the distribution of predicted True Market Potential across the network. Notice how the green 'Funded' outlets are isolated across the long tail, proving the algorithm prioritizes pure ROI over sheer size.")
+        
     with col1b:
         # Strategic ROI (Average Volume Lift)
         st.markdown("### Strategic ROI (Average Volume Lift)")
@@ -549,6 +529,9 @@ with tab2:
         fig_scatter.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
         st.plotly_chart(fig_scatter, use_container_width=True)
         
+        with st.expander("💡 How to read this chart"):
+            st.write("**Insight:** The vertical banding shows rigid, historical quotas capping true potential. The LightGBM model decensored these limits using spatial features, fanning the predictions into a natural, continuous distribution.")
+        
         # Competitive Saturation
         st.markdown("### Density Distribution (Saturated Zones Only)")
         sat_df = filtered_df[filtered_df["competitive_saturation_index"] > 0]
@@ -556,6 +539,10 @@ with tab2:
         fig_comp.add_vline(x=0.05, line_dash="dash", line_color="#f87171", annotation_text="Saturated Region")
         fig_comp.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
         st.plotly_chart(fig_comp, use_container_width=True)
+        
+        with st.expander("💡 How to read this chart"):
+            saturated_pct = (len(sat_df) / max(1, len(filtered_df))) * 100
+            st.write(f"**Insight:** Approximately {saturated_pct:.1f}% of the network is operating in a competitive zone. The MILP optimizer actively avoids the red saturated region to prevent self-cannibalization and ensure high marginal ROI.")
         
     with col2b:
         # Feature Importance
