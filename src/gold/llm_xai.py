@@ -86,7 +86,7 @@ def _generate_fallback_narrative(context: dict) -> str:
     else:
         risk_text = f"This prediction is calculated using a strict 90% statistical confidence interval. In simple business terms, the AI is 90% certain that even if we flood this outlet with unlimited coolers and supply, it will not exceed {pot:,.1f} L/month. Because the expected return does not justify the cost of deployment, investing capital here carries an **Unfavorable Risk Profile** compared to better opportunities in the network."
         
-    p4 = f"<br><br>**Decision Confidence & Risk Assessment:**<br>{risk_text}"
+    p4 = f"<br><br>**Decision Confidence & Risk Assessment:**<br><span style='color: #cbd5e1; font-style: italic;'>{risk_text}</span>"
     
     return p1 + p2 + p3 + p4
 
@@ -145,7 +145,7 @@ RULES:
    <br><br>
    **Which factors increased or decreased the prediction:** (Explain which POI drivers pushed the score up/down, and conclude with the investment ROI).
    <br><br>
-   **Decision Confidence & Risk Assessment:** (State that the prediction uses a 90% statistical confidence interval. Crucially, explain what this means in simple, non-technical business terms: e.g., 'In simple terms, the AI is 90% certain that even with unlimited supply, the outlet will not exceed X Liters'. Assess if the investment is Low/Moderate/High risk based on competition and ROI).
+   **Decision Confidence & Risk Assessment:** (State that the prediction uses a 90% statistical confidence interval. Crucially, explain what this means in simple, non-technical business terms: e.g., 'In simple terms, the AI is 90% certain that even with unlimited supply, the outlet will not exceed X Liters'. Assess if the investment is Low/Moderate/High risk. Format the text of this specific section in *italics* to distinguish it from the core analysis).
 3. Write in a fluid, professional, and detailed business narrative style. Provide 2-3 comprehensive sentences per section. Do NOT write brief, robotic one-liners.
 4. Explicitly explain the business mechanics (e.g., how the specific footfall drivers physically bring in customers, or how the lack of competition guarantees market share).
 5. Bold key metrics for visual emphasis.

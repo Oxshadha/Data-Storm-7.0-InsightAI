@@ -719,8 +719,21 @@ if outlet_id in df["Outlet_ID"].values:
                 st.write("**Insight:** The orange polygon maps this outlet's unique spatial demographic pull against the network average (gray line). Massive spikes indicate a highly concentrated local audience (e.g., Youth, Tourist, Transit) that the AI identified as a key driver for latent volume potential.")
 
     st.markdown('<br>', unsafe_allow_html=True)
-    st.markdown('<div class="xai-box" style="padding: 20px; background-color: #0f172a; border-radius: 8px; border-left: 4px solid #f59e0b;"><strong>Model Decisional Insights:</strong></div>', unsafe_allow_html=True)
-    st.markdown(explanation, unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown("### :material/psychology: Model Decisional Insights")
+        
+        risk_header = "**Decision Confidence & Risk Assessment:**"
+        if risk_header in explanation:
+            # Clean up the split
+            explanation_clean = explanation.replace(f"<br><br>{risk_header}", risk_header)
+            parts = explanation_clean.split(risk_header)
+            core_text = parts[0]
+            risk_text = parts[1].replace("<br>", "", 1) if parts[1].startswith("<br>") else parts[1]
+            
+            st.markdown(core_text, unsafe_allow_html=True)
+            st.info(f"**Decision Confidence & Risk Assessment:**\n\n{risk_text}", icon=":material/security:")
+        else:
+            st.markdown(explanation, unsafe_allow_html=True)
 
 else:
     st.warning("Outlet ID not found in dataset.")
