@@ -322,10 +322,29 @@ tab1, tab2 = st.tabs(["Strategy & Execution", "Technical Analytics"])
 with tab1:
     # ── Chart 1: PyDeck Map ─────────────────────────────────────────────
     st.markdown("### Strategic Investment Map")
+    st.markdown("""
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 15px; font-size: 0.85rem; color: #94a3b8; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: rgba(16, 185, 129, 0.9);"></div>
+                <span><b>Funded Investment</b> (Chosen Outlet)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <div style="width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(248, 113, 113, 0.8);"></div>
+                <span><b>500m Exclusive Territory</b> (Protected Catchment)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <div style="width: 10px; height: 10px; border-radius: 50%; background-color: rgba(203, 213, 225, 0.6);"></div>
+                <span><b>Baseline Potential</b> (Not Funded)</span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
     
     # Prepare map data and strictly cast types to prevent PyDeck JSON serialization crashes
     map_cols = ["Outlet_ID", "Latitude", "Longitude", "Dynamic_Tier", "Trade_Spend_Allocation", "Volume_Lift"]
     map_df = filtered_df.dropna(subset=["Latitude", "Longitude"])[map_cols].copy()
+    
+    # Visually filter out synthetic noise points that fall into the Laccadive Sea
+    map_df = map_df[map_df["Longitude"] >= 79.845]
     
     map_df["Latitude"] = map_df["Latitude"].astype(float)
     map_df["Longitude"] = map_df["Longitude"].astype(float)
