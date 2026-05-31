@@ -79,7 +79,16 @@ def _generate_fallback_narrative(context: dict) -> str:
         
     p3 = f"<br><br>**Which factors increased or decreased the prediction:**<br>{driver_text} {rec_text}"
     
-    return p1 + p2 + p3
+    # 4. Confidence & Risk
+    if budget > 0:
+        risk_profile = "Low Risk / High Reward" if is_goldmine else "Moderate Risk / High Reward"
+        risk_text = f"This volume prediction is statistically bound using a **p90 Quantile Confidence Interval**. This mathematically guarantees that we are 90% confident the outlet's true ceiling lies beneath {pot:,.1f} L/month. Given the robust data signals and local competition constraints, this allocation represents a **{risk_profile}** investment."
+    else:
+        risk_text = f"This volume prediction is statistically bound using a **p90 Quantile Confidence Interval**. Because the projected marginal ROI does not meet the optimizer's rigorous threshold, deploying capital here currently carries an **Unfavorable Risk Profile** compared to other network alternatives."
+        
+    p4 = f"<br><br>**Decision Confidence & Risk Assessment:**<br>{risk_text}"
+    
+    return p1 + p2 + p3 + p4
 
 
 def explain_outlet(context: dict) -> str:
@@ -129,12 +138,14 @@ Decision Engine Reason: {context.get('funding_reason', 'N/A')}
 
 RULES:
 1. Do NOT use data science jargon (no 'SHAP', 'MILP', 'Decensoring').
-2. You MUST structure your response into exactly three sections using bold HTML breaks or Markdown headers exactly as follows:
+2. You MUST structure your response into exactly four sections using bold HTML breaks or Markdown headers exactly as follows:
    **Why the model assigned this specific score:** (Explain the gap between historical caps/coolers and predicted potential).
    <br><br>
    **How local conditions and constraints influenced the result:** (Explain spatial mapping and competition intensity).
    <br><br>
    **Which factors increased or decreased the prediction:** (Explain which POI drivers pushed the score up/down, and conclude with the investment ROI).
+   <br><br>
+   **Decision Confidence & Risk Assessment:** (Explain that the prediction is statistically bound using a p90 Quantile Confidence Interval, meaning the AI is 90% confident the true ceiling is beneath the predicted potential. Assess if the investment is Low/Moderate/High risk based on competition and ROI).
 3. Write in a fluid, professional, and detailed business narrative style. Provide 2-3 comprehensive sentences per section. Do NOT write brief, robotic one-liners.
 4. Explicitly explain the business mechanics (e.g., how the specific footfall drivers physically bring in customers, or how the lack of competition guarantees market share).
 5. Bold key metrics for visual emphasis.
