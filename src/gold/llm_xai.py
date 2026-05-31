@@ -24,6 +24,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 
 def _generate_fallback_narrative(context: dict) -> str:
     """

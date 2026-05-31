@@ -65,6 +65,23 @@ python run_pipeline.py --stage gold
 python run_pipeline.py --stage predict
 ```
 
+### 4. Run the Executive Dashboard
+We built a highly interactive, enterprise-grade Streamlit application to visualize the output of our MILP Optimizer and present the final strategic funding recommendations to stakeholders.
+
+```bash
+# Run the application locally
+streamlit run app.py
+```
+
+**Generative AI Explainable AI (XAI) Panel:**
+The dashboard features an Outlet Drill-Down panel powered by a hybrid explanation engine:
+* **Live LLM (Gemini 1.5 Flash):** To enable dynamic, AI-generated reasoning, create a `.env` file in the root directory and add your Google Gemini API key:
+  ```bash
+  cp .env.example .env
+  # Then edit .env and paste your GEMINI_API_KEY
+  ```
+* **Offline Fallback (Rule-Based Engine):** If you do not have an API key, or if you are running in an offline environment, the app **will not break**. It will automatically fall back to a dynamic, rule-based text generator that provides a professional narrative based on the outlet's mathematical context.
+
 ---
 
 ## 🔬 The Analytical Pipeline: From EDA to Prediction

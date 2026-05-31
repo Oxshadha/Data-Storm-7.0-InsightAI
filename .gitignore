@@ -40,3 +40,6 @@ env/
 
 # ── Keep empty dirs ──
 !**/.gitkeep
+
+# ── Environment Variables ──
+.env
