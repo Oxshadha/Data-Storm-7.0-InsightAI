@@ -102,7 +102,7 @@ if len(censored_df) > 0:
     
     # Predictions (breakthrough)
     plt.scatter(censored_df.loc[sample_idx, "Total_Volume"], 
-                floored_preds[censored_df.index.get_indexer(sample_idx)], 
+                floored_preds.loc[sample_idx], 
                 alpha=0.6, color='green', marker='*', s=15, label='Predicted Potential (Unconstrained)')
     
     max_val = min(censored_df["Total_Volume"].max(), 500)
