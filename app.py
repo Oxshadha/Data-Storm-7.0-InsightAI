@@ -431,7 +431,7 @@ with tab1:
             y=[total_spend, -tier3_spend, -tier2_spend, -tier1_spend, 0],
             connector={"line": {"color": "rgb(63, 63, 63)"}},
             decreasing={"marker": {"color": "#3b82f6"}},
-            totals={"marker": {"color": "#10b981"}}
+            totals={"marker": {"color": "#94a3b8"}}
         ))
         fig_waterfall.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
         st.plotly_chart(fig_waterfall, use_container_width=True)
@@ -497,8 +497,9 @@ with tab2:
         st.plotly_chart(fig_scatter, use_container_width=True)
         
         # Competitive Saturation
-        st.markdown("### Competitive Density Distribution")
-        fig_comp = px.histogram(filtered_df, x="competitive_saturation_index", marginal="violin", color_discrete_sequence=["#8b5cf6"])
+        st.markdown("### Density Distribution (Saturated Zones Only)")
+        sat_df = filtered_df[filtered_df["competitive_saturation_index"] > 0]
+        fig_comp = px.histogram(sat_df, x="competitive_saturation_index", marginal="violin", color_discrete_sequence=["#8b5cf6"])
         fig_comp.add_vline(x=0.05, line_dash="dash", line_color="#f87171", annotation_text="Saturated Region")
         fig_comp.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
         st.plotly_chart(fig_comp, use_container_width=True)
@@ -567,12 +568,28 @@ if outlet_id in df["Outlet_ID"].values:
         if int(outlet_row.get("is_isolated_goldmine", 0)) == 1:
             st.markdown("<span class='goldmine-badge'>★ UNTAPPED HIGH-TRAFFIC ZONE</span>", unsafe_allow_html=True)
             
-        # Single outlet comparison bar
-        fig_single_bar = go.Figure(data=[
-            go.Bar(name='Historical Average', x=['Volume'], y=[outlet_row.get('Avg_Monthly_Volume', 0.0)], marker_color='#60a5fa'),
-            go.Bar(name='Predicted Potential', x=['Volume'], y=[outlet_row.get('Maximum_Monthly_Liters', 0.0)], marker_color='#22d3ee')
-        ])
-        fig_single_bar.update_layout(barmode='group', paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", height=300)
+        # Single outlet comparison bullet gauge
+        fig_single_bar = go.Figure(go.Indicator(
+            mode = "number+gauge+delta",
+            value = outlet_row.get('Maximum_Monthly_Liters', 0.0),
+            domain = {'x': [0.1, 1], 'y': [0, 1]},
+            title = {'text': "<b>Volume</b><br><span style='color: gray; font-size:0.8em'>Liters</span>"},
+            delta = {'reference': outlet_row.get('Avg_Monthly_Volume', 0.0), 'position': "top"},
+            gauge = {
+                'shape': "bullet",
+                'axis': {'range': [None, max(500, outlet_row.get('Maximum_Monthly_Liters', 0.0) * 1.2)]},
+                'threshold': {
+                    'line': {'color': "#10b981", 'width': 3},
+                    'thickness': 0.75,
+                    'value': outlet_row.get('Maximum_Monthly_Liters', 0.0)
+                },
+                'steps': [
+                    {'range': [0, outlet_row.get('Avg_Monthly_Volume', 0.0)], 'color': "#475569"}
+                ],
+                'bar': {'color': "#22d3ee"}
+            }
+        ))
+        fig_single_bar.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", height=250)
         st.plotly_chart(fig_single_bar, use_container_width=True)
 
     with det2:
@@ -607,7 +624,7 @@ if outlet_id in df["Outlet_ID"].values:
             f"""
             <div class="xai-box">
                 <strong>Model Decisional Insights:</strong><br>
-                <p style="margin-top: 10px; font-style: italic; line-height: 1.6;">"{explanation}"</p>
+                <p style="margin-top: 10px; line-height: 1.6;">{explanation}</p>
             </div>
             """,
             unsafe_allow_html=True,

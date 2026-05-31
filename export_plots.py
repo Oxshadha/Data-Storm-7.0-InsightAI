@@ -56,9 +56,9 @@ features = [
     'poi_driver_catchment', 'poi_cannibal_risk', 'Tuition_Weekend_Surge', 
     'Tourist_Peak_Multiplier', 'Sports_Big_Match_Spike', 'Health_Catchment_Spike',
     'Has_High_Footfall_Catchment', 'Has_Cannibalization_Risk',
-    'Number_of_Weekends', 'Holiday_Count', 'Dynamic_Tier'
+    'Number_of_Weekends', 'Holiday_Count'
 ]
-cat_features = ["Dynamic_Tier"]
+cat_features = []
 
 train_df = abt[abt["Is_Censored"] == 0].copy()
 X_train = train_df[features].copy()

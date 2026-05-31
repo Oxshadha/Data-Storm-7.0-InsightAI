@@ -58,7 +58,7 @@ def run_lgbm_model(config: dict | None = None) -> None:
         "Health_Catchment_Spike"
     ]
     
-    cat_features = ["Outlet_Type", "Dynamic_Tier"]
+    cat_features = ["Outlet_Type"]
     
     features = poi_cols + catchment_cols + temporal_cols + interaction_cols + cat_features
     target = "Total_Volume"
@@ -133,7 +133,7 @@ def run_lgbm_model(config: dict | None = None) -> None:
     target_year = config["project"]["target_year"]    # 2026
     target_month = config["project"]["target_month"]  # 1
     
-    future_grid = outlet_static[["Outlet_ID", "Distributor_ID", "Outlet_Type", "Dynamic_Tier"] + poi_cols + catchment_cols].copy()
+    future_grid = outlet_static[["Outlet_ID", "Distributor_ID", "Outlet_Type"] + poi_cols + catchment_cols].copy()
     future_grid["Year"] = target_year
     future_grid["Month"] = target_month
     

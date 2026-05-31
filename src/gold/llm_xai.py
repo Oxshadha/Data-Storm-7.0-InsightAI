@@ -127,6 +127,7 @@ RULES:
 3. Be confident, concise, and business-focused.
 4. If the outlet is an "Untapped High-Traffic Zone" (goldmine), emphasize the strategic opportunity.
 5. End with a concrete action item based on the Recommended Investment.
+6. Use Markdown to **bold** key metrics (True Market Potential, Scores, Lift percentages) for visual emphasis.
 """
             response = model.generate_content(prompt)
             return response.text.strip()
