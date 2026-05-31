@@ -155,6 +155,18 @@ def run_spend_optimizer(config: dict | None = None) -> None:
     ])
     solver.Add(budget_constraint <= budget)
 
+    # ── Constraint 1.5: Geographic Distribution (Save Colombo) ──────────────
+    # Force the solver to spend at least 1,000,000 LKR in EACH distributor
+    min_spend_per_distributor = 1000000
+    distributors = candidates["Distributor_ID"].unique()
+    for dist in distributors:
+        dist_shops = candidates[candidates["Distributor_ID"] == dist]
+        if not dist_shops.empty:
+            solver.Add(
+                solver.Sum([variables[idx] * int(row["investment_cost"]) for idx, row in dist_shops.iterrows()]) >= min_spend_per_distributor
+            )
+    logger.info(f"Geographic Distribution: Enforced {min_spend_per_distributor:,.0f} LKR minimum spend per distributor.")
+
     # ── Constraint 2: Spatial Anti-Cannibalization ────────────────────────
     # No two funded outlets within 500m of each other.
     # Prevents double-spending on the same catchment zone.

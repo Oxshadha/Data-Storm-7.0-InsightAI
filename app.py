@@ -236,6 +236,13 @@ with st.sidebar.expander("🔧 Live Scenario Planning", expanded=False):
             # Budget constraint
             solver.Add(solver.Sum([variables[idx] * int(row["investment_cost"]) for idx, row in candidates.iterrows()]) <= optim_budget)
             
+            # Geographic constraint (Save Colombo)
+            min_spend = optim_budget * 0.20 # Force at least 20% of budget into each of the 3 distributors
+            for dist in candidates["Distributor_ID"].unique():
+                dist_shops = candidates[candidates["Distributor_ID"] == dist]
+                if not dist_shops.empty:
+                    solver.Add(solver.Sum([variables[idx] * int(row["investment_cost"]) for idx, row in dist_shops.iterrows()]) >= min_spend)
+            
             # Anti-cannibalization (simplified for UI speed - randomly exclude some if near)
             # In production, use cKDTree here as well
             
