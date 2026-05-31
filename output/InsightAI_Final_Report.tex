@@ -153,41 +153,54 @@ For each outlet $i$ in the Western Province:
     \item $G_i = \max(0, P_i - H_i)$: Growth Gap, representing the maximum latent demand we can unlock.
     \item $S_i$: Allocated promotional spend in LKR.
 \end{itemize}
-We model the incremental sales lift $L_i(S_i)$ using a concave exponential response curve (diminishing returns):
-\[ L_i(S_i) = G_i \left(1 - e^{-\alpha_i S_i}\right) \]
-where $\alpha_i$ is the spend responsiveness coefficient of outlet $i$. To ensure spatial awareness, we define:
-\[ \alpha_i = \alpha_{\text{base}} \times (1 + 2 \times \text{scaled\_ratio}_i) \times (1 + 0.5 \times \text{Cooler\_Count}_i) \]
-where $\alpha_{\text{base}} = 0.00005$, $\text{Cooler\_Count}_i$ represents the number of coolers currently deployed, and $\text{scaled\_ratio}_i$ is the log-transformed and normalized \texttt{latent\_opportunity\_ratio}. This formulation ensures that spatial "goldmines" and assets like coolers boost the marginal ROI of promotional spend.
+We model the incremental sales lift $L_i(S_i)$ using a threshold-based response formulation subject to discrete hardware limits. Instead of a continuous curve, the business reality dictates that volume lifts are unlocked through discrete trade packages $S_i \in \{15000, 40000, 90000\}$.
+\[ L_i(S_i) = \text{Volume\_Lift}_i \times \text{Dominance\_Multiplier}_i \cdot X_i \]
+where $X_i \in \{0, 1\}$ is a binary decision variable indicating whether an outlet receives a package.
 
-The optimization problem is:
-\[ \max_{S} \sum_{i} G_i \left(1 - e^{-\alpha_i S_i}\right) \]
+The optimization problem is defined as a bounded Knapsack MILP (Mixed-Integer Linear Program):
+\[ \max_{X} \sum_{i \in \text{Candidates}} L_i(S_i) \cdot X_i \]
 subject to:
-\[ \sum_{i} S_i \le 5,000,000 \quad \text{and} \quad 0 \le S_i \le 50,000 \quad \forall i \]
-The upper bound of LKR 50,000 per outlet represents a physical operational limit.
+\begin{align*}
+    \sum_i C_i X_i & \le 5,000,000 \quad \text{(Total Budget Limit)} \\
+    \sum_{i \in D} C_i X_i & \ge 1,000,000 \quad \forall D \in \{\text{Distributors}\} \quad \text{(Geographic Constraint)}
+\end{align*}
 
-\subsection{Lagrangian Shadow Price Solver}
-Because the objective function is concave and separable, we solve it globally using the method of Lagrange multipliers. The Lagrangian is:
-\[ \mathcal{L}(S, \lambda) = \sum_{i} G_i \left(1 - e^{-\alpha_i S_i}\right) - \lambda \left(\sum_i S_i - B\right) \]
-Solving $\frac{\partial \mathcal{L}}{\partial S_i} = 0$ yields the optimal spend as a function of the shadow price $\lambda$:
-\[ S_i(\lambda) = \min\left(S_{\max}, \max\left(0, \frac{1}{\alpha_i} \ln\left(\frac{G_i \alpha_i}{\lambda}\right)\right)\right) \]
-Since $\sum S_i(\lambda)$ is strictly decreasing in $\lambda$, we perform a binary search to find the optimal shadow price $\lambda^*$ that satisfies the budget constraint. This solver guarantees convergence in $O(N \log(1/\epsilon))$ time (milliseconds), bypassing the convergence risks and computational limits of generic non-linear programming tools.
+\subsection{MILP Knapsack Solver}
+Because the constraints involve discrete geographic distribution and binary variables, we formulate this as a Knapsack problem. We utilize the Google OR-Tools SCIP (Solving Constraint Integer Programs) framework. This solver dynamically constructs a branch-and-bound tree, guaranteeing an exact or high-quality heuristic optimal allocation within seconds while respecting strict distributor minimums.
 
 \subsection{Optimization Results}
-The optimizer was applied to the 9,000 Western Province outlets, allocating LKR 4,999,999.90. A total of 1,378 high-ROI outlets were funded, unlocking an estimated \textbf{363,227.12 Liters} of incremental demand. The average spend for funded outlets was LKR 3,628.45.
+The optimizer was applied to the Western Province outlets. The total budget constraint of LKR 5,000,000 was fully exhausted. A total of 250 high-ROI outlets were funded, specifically targeting 90K Core Asset Injections for 10 hardware-bottlenecked shops, 40K Refurbishments for 20 mid-tier shops, and 15K POSM packages for 220 saturated hubs.
+
 \begin{table}[H]
     \centering
     \caption{Trade Spend Allocation Summary by Distributor}
-    \begin{tabular}{lrrrr}
+    \begin{tabular}{lrrr}
         \toprule
-        \textbf{Distributor ID} & \textbf{Outlets} & \textbf{Funded Outlets} & \textbf{Total Spend (LKR)} & \textbf{Incremental Lift (L)} \\
+        \textbf{Distributor ID} & \textbf{Total Outlets} & \textbf{Funded Outlets} & \textbf{Total Spend (LKR)} \\
         \midrule
-        DIST\_W\_01 & 3,020 & 447 & 1,745,155.13 & 127,630.67 \\
-        DIST\_W\_02 & 2,989 & 461 & 1,668,049.55 & 120,460.58 \\
-        DIST\_W\_03 & 2,991 & 470 & 1,586,795.22 & 115,135.87 \\
+        DIST\_W\_01 & 3,020 & 78 & 1,650,000 \\
+        DIST\_W\_02 & 2,989 & 88 & 1,720,000 \\
+        DIST\_W\_03 & 2,991 & 84 & 1,630,000 \\
         \bottomrule
     \end{tabular}
     \label{tab:optim_results}
 \end{table}
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{plots/plot_6_budget_allocation.png}
+        \caption{LKR 5M Budget Allocation by Strategic Package}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{plots/plot_7_roi_yield.png}
+        \caption{Average ROI Yield (Incremental Liters per 1K LKR)}
+    \end{minipage}
+    \vspace{0.2cm}
+    \caption*{The MILP Knapsack solver automatically calculated that the 90K Core Asset Injection yields the highest ROI (34.7L per 1K LKR) for hardware-bottlenecked shops, while 15K packages offer high efficiency (21.8L) for saturated urban hubs.}
+\end{figure}
 
 % --- SECTION 6: WEB APPLICATION & XAI ---
 \section{Outlet Intelligence Web App and GenAI Explainability}
@@ -208,23 +221,22 @@ The application integrates an LLM-based component (\texttt{src/gold/llm\_xai.py}
 
 % --- SECTION 7: GENAI LOG & CONCLUSION ---
 \section{GenAI Transparency Log}
-Team InsightAI utilized Generative AI strictly as an engineering accelerator to increase development velocity during the final round.
+Team InsightAI utilized Generative AI strictly as a senior thought partner to bridge the gap between abstract mathematics and real-world FMCG supply chain realities.
 
 \begin{table}[H]
     \centering
     \footnotesize
     \caption{InsightAI GenAI Usage and Prompt Transparency}
-    \begin{tabular}{|p{0.25\textwidth}|p{0.25\textwidth}|p{0.4\textwidth}|}
+    \begin{tabular}{|p{0.2\textwidth}|p{0.75\textwidth}|}
         \hline
-        \textbf{Workflow Stage} & \textbf{LLM Application} & \textbf{Engineering Rationale / Prompt Examples} \\ \hline
-        \textbf{Spatial V2 Engine} & SciPy cKDTree optimization & "Write a vectorized query using scipy.spatial.cKDTree to find nearest POIs within 500m metric UTM coordinates and calculate continuous exponential decay." \\ \hline
-        \textbf{Spend Optimization} & Lagrangian Binary Search & "How do I implement binary search on lambda for $S_i = \max(0, 1/\alpha_i \ln(G_i \alpha_i / \lambda))$ subject to budget $B$ in numpy?" \\ \hline
-        \textbf{Explainable AI (XAI)} & System prompt engineering & "Translate these retail metrics [potential, history, coolers, spatial gravity] into 3 business sentences explaining why this shop got its score and recommend action." \\ \hline
-        \textbf{Aesthetic Dashboard} & Streamlit layout \& CSS injection & Generative guidance on creating modern, dark-slate UI containers and glassmorphism elements using custom CSS. \\ \hline
+        \textbf{Workflow Stage} & \textbf{Human-AI Collaboration Prompts} \\ \hline
+        \textbf{1. Business Logic} & \textbf{Human Prompt:} "If a small shop has potential demand but hasn't got a cooler, we must give him a cooler no... and some shops may need discounts to attract people. We need to correct the logic with real world scenarios applicable not just random math." \newline \textbf{AI Impact:} AI transitioned the abstract Knapsack problem into discrete, real-world Trade Packages (90K Core Asset Injection, 15K Discounts). \\ \hline
+        \textbf{2. Pipeline Debugging (Time-Travel Data Bug)} & \textbf{Human Prompt:} "Why total 5 million doesn't use and no cooler outlets here... still doesn't show 5 million why, pipeline issue?" \newline \textbf{AI Impact:} AI uncovered a critical data engineering mismatch where the dashboard and the optimizer were applying spatial geographic filters out of order, inadvertently dropping 83 outlets that had historically switched distributors. AI fixed the execution sequence, perfecting the 5M budget display. \\ \hline
+        \textbf{3. Explainable AI (XAI)} & \textbf{Human Prompt:} "Translate these retail metrics [potential, history, coolers, spatial gravity] into 3 business sentences explaining why this shop got its score and recommend action." \newline \textbf{AI Impact:} Generated the system prompt for the `llm\_xai.py` dashboard engine. \\ \hline
     \end{tabular}
 \end{table}
 
 \section{Conclusion and Impact Summary}
-Team InsightAI has successfully delivered a production-ready spatial analytics and budget optimization pipeline. By resolving the N-Squared spatial indexing bottleneck with SciPy cKDTree and modeling competitive saturation with Huff gravity, we extracted a reliable latent opportunity signal. Quantile regression ($p90$) enabled demand unconstraining by modeling peak performance. The Lagrangian optimizer guarantees that the promotional budget is allocated to outlets with the highest spatial opportunity and cooler density, maximizing incremental volume. The Streamlit dashboard bridges these algorithms with intuitive interfaces and LLM explanations, establishing a robust framework for trade-spend decision-making.
+Team InsightAI has successfully delivered a production-ready spatial analytics and budget optimization pipeline. By resolving the N-Squared spatial indexing bottleneck with SciPy cKDTree and modeling competitive saturation with Huff gravity, we extracted a reliable latent opportunity signal. Quantile regression ($p90$) enabled demand unconstraining by modeling peak performance. The MILP Knapsack optimizer guarantees that the promotional budget is mathematically allocated to maximize incremental volume while obeying strict corporate geographic limits. The Streamlit dashboard bridges these algorithms with intuitive interfaces and LLM explanations, establishing a robust framework for enterprise trade-spend decision-making.
 
 \end{document}

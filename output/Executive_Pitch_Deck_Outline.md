@@ -23,7 +23,7 @@
 * **The Execution:** Our MILP (Mixed-Integer Linear Programming) Optimizer struck the perfect balance:
   * **78% of Budget:** Deployed to *Strategic Urban Hubs* to maintain core market share.
   * **22% of Budget:** Aggressively carved out to capture *Isolated Goldmines* for maximum incremental lift.
-* **The Packages:** (90K New Coolers, 40K Refurbish, 15K Merchandising) perfectly distributed to maximize ROI.
+* **The Packages:** (90K Core Asset Injection, 40K Visibility & Refurbishment, 15K POSM & Discounts) perfectly distributed to maximize ROI.
 
 ## Slide 4: Generative AI as an Executive Advisory
 * **Headline:** From Black Box to Boardroom.
