@@ -26,6 +26,8 @@ Output:
 
 import numpy as np
 import pandas as pd
+import geopandas as gpd
+from scipy.spatial import cKDTree
 from ortools.linear_solver import pywraplp
 from src.utils.config import load_config
 from src.utils.io import read_parquet
@@ -146,12 +148,51 @@ def run_spend_optimizer(config: dict | None = None) -> None:
     for idx, row in candidates.iterrows():
         variables[idx] = solver.IntVar(0, 1, f"x_{row['Outlet_ID']}")
 
-    # ── Constraint: Total Spend ≤ Budget ──────────────────────────────────
+    # ── Constraint 1: Total Spend ≤ Budget ─────────────────────────────────
     budget_constraint = solver.Sum([
         variables[idx] * int(row["investment_cost"])
         for idx, row in candidates.iterrows()
     ])
     solver.Add(budget_constraint <= budget)
+
+    # ── Constraint 2: Spatial Anti-Cannibalization ────────────────────────
+    # No two funded outlets within 500m of each other.
+    # Prevents double-spending on the same catchment zone.
+    exclusion_radius_m = 500
+    coords_df = read_parquet(
+        config["paths"]["silver"]["root"] + "/outlet_coordinates_clean.parquet"
+    )
+    candidates_with_coords = candidates.merge(coords_df, on="Outlet_ID", how="left")
+    has_coords = candidates_with_coords["Latitude"].notna()
+
+    if has_coords.sum() > 0:
+        geo_subset = candidates_with_coords[has_coords]
+        gdf = gpd.GeoDataFrame(
+            geo_subset,
+            geometry=gpd.points_from_xy(geo_subset["Longitude"], geo_subset["Latitude"]),
+            crs="EPSG:4326",
+        ).to_crs(epsg=5234)
+        xy = np.column_stack([gdf.geometry.x.values, gdf.geometry.y.values])
+
+        tree = cKDTree(xy)
+        conflict_pairs = tree.query_pairs(r=exclusion_radius_m)
+
+        # Map positional indices back to candidate DataFrame indices
+        geo_indices = geo_subset.index.tolist()
+        n_conflicts = 0
+        for pos_a, pos_b in conflict_pairs:
+            idx_a = geo_indices[pos_a]
+            idx_b = geo_indices[pos_b]
+            if idx_a in variables and idx_b in variables:
+                solver.Add(variables[idx_a] + variables[idx_b] <= 1)
+                n_conflicts += 1
+
+        logger.info(
+            f"Anti-cannibalization: {n_conflicts:,} pairwise exclusion constraints "
+            f"(no two funded outlets within {exclusion_radius_m}m)"
+        )
+    else:
+        logger.warning("No coordinates available — skipping spatial exclusion constraints.")
 
     # ── Objective: Maximize Volume Lift with Strategic Multiplier ──────────
     # Isolated Goldmines get a 1.2× priority multiplier:
