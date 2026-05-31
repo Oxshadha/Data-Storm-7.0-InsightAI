@@ -50,32 +50,32 @@ def _generate_fallback_narrative(context: dict) -> str:
     cooler_count = context.get("cooler_count", 0)
     
     # 1. Why score
-    p1 = f"**Why the model assigned this specific score:**<br>Outlet {outlet_id} is a {tier} retailer currently constrained to a historical average of {hist_avg:,.1f} L/month. With {cooler_count} coolers deployed, the model predicts a True Market Potential of **{pot:,.1f} L/month**, representing a **{growth_pct}** expansion if supply caps are removed."
+    p1 = f"**Why the model assigned this specific score:**<br>Outlet {outlet_id} operates as a {tier} retailer, which historically constrained its performance to a plateau of {hist_avg:,.1f} L/month. However, when evaluating the underlying spatial demographics and current deployment of {cooler_count} coolers, our Decensoring Model identified a significant suppressed demand. Removing artificial supply caps reveals a True Market Potential of **{pot:,.1f} L/month**, representing a massive **{growth_pct}** expansion opportunity that the current distribution network is missing."
     
     # 2. Local conditions and constraints
     if is_goldmine:
-        env_text = "This location operates in an **Untapped High-Traffic Zone** with zero direct competitors within a 1km radius, offering a rare monopoly advantage."
+        env_text = "This location is uniquely positioned in an **Untapped High-Traffic Zone**. It enjoys a rare monopoly advantage with zero direct competitors within a 1km radius. This lack of competitive density means any trade marketing spend here will not be cannibalized by neighboring outlets, allowing you to capture 100% of the localized demand."
     elif comp_density > 0.05:
-        env_text = "The outlet operates in a highly saturated competitive zone, meaning any investment here is highly defensive and requires aggressive market share capture."
+        env_text = "The outlet operates in a highly saturated competitive zone. The local environment is densely packed with rival retailers, meaning this investment is highly defensive. Trade marketing here is required not just to grow, but to aggressively protect and capture market share from competitors in the immediate vicinity."
     else:
-        env_text = "The location holds a balanced spatial footprint with moderate competitive exposure."
+        env_text = "The location holds a balanced spatial footprint with moderate competitive exposure. It is neither completely isolated nor hyper-competitive, representing a stable environment for consistent, targeted marketing deployments."
     p2 = f"<br><br>**How local conditions and constraints influenced the result:**<br>{env_text}"
     
     # 3. Factors increasing/decreasing prediction
     if top_drivers:
         driver_names = [f"{d[0]} (Score: {d[1]:.1f})" for d in top_drivers[:2] if d[1] > 0]
         if driver_names:
-            driver_text = "Volume lift is heavily driven upward by strong local footfall from " + " and ".join(driver_names) + "."
+            driver_text = "The volume prediction is heavily driven upward by strong localized footfall, specifically from " + " and ".join(driver_names) + ". These spatial anchors guarantee a continuous influx of high-intent consumers."
         else:
-            driver_text = "Volume is driven by standard demographic patterns rather than specific POI spikes."
+            driver_text = "The volume is driven primarily by baseline demographic stability rather than specific high-impact points of interest."
     else:
-        driver_text = "Volume is driven by standard demographic patterns."
+        driver_text = "The volume is driven primarily by baseline demographic stability rather than specific high-impact points of interest."
         
     if budget > 0:
         roi = context.get("roi_per_1k", "0.0 L/1K LKR")
-        rec_text = f"The optimizer allocated **LKR {budget:,}**, yielding a projected ROI of **{roi}**. Execute trade marketing to capture the **{lift:,.1f}L** volume lift."
+        rec_text = f"Consequently, the optimization engine has confidently allocated **LKR {budget:,}** to this outlet. This is projected to yield an exceptional ROI of **{roi}**. We recommend immediate execution of trade marketing activities to fully capture the **{lift:,.1f}L** latent volume lift."
     else:
-        rec_text = "No additional budget allocated. Maintain standard distribution."
+        rec_text = "Given the current constraints and ROI thresholds, no additional budget has been allocated. We recommend maintaining standard distribution and re-evaluating in the next quarter."
         
     p3 = f"<br><br>**Which factors increased or decreased the prediction:**<br>{driver_text} {rec_text}"
     
@@ -135,8 +135,9 @@ RULES:
    **How local conditions and constraints influenced the result:** (Explain spatial mapping and competition intensity).
    <br><br>
    **Which factors increased or decreased the prediction:** (Explain which POI drivers pushed the score up/down, and conclude with the investment ROI).
-3. Be confident, concise, and business-focused.
-4. Bold key metrics for visual emphasis.
+3. Write in a fluid, professional, and detailed business narrative style. Provide 2-3 comprehensive sentences per section. Do NOT write brief, robotic one-liners.
+4. Explicitly explain the business mechanics (e.g., how the specific footfall drivers physically bring in customers, or how the lack of competition guarantees market share).
+5. Bold key metrics for visual emphasis.
 """
             response = model.generate_content(prompt)
             return response.text.strip()
