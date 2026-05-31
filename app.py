@@ -451,26 +451,64 @@ with tab1:
         fig_waterfall.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
         st.plotly_chart(fig_waterfall, use_container_width=True)
         
-        # Funded vs Unfunded Distribution (Box Plot for Executive Readability)
+        # Funded vs Unfunded Distribution (Overlapping Histogram)
         st.markdown("### Outlet Potential Distribution")
         
-        filtered_df["Status"] = filtered_df["Trade_Spend_Allocation"].apply(lambda x: "Funded (Top 2.7%)" if x > 0 else "Unfunded (Ignored)")
+        filtered_df["Status"] = filtered_df["Trade_Spend_Allocation"].apply(lambda x: "Funded" if x > 0 else "Unfunded")
         
-        fig_dist = go.Figure()
-        fig_dist.add_trace(go.Box(y=filtered_df[filtered_df["Status"] == "Unfunded (Ignored)"]["Maximum_Monthly_Liters"], name="Unfunded (Ignored)", marker_color="#475569"))
-        fig_dist.add_trace(go.Box(y=filtered_df[filtered_df["Status"] == "Funded (Top 2.7%)"]["Maximum_Monthly_Liters"], name="Funded (Top 2.7%)", marker_color="#10b981"))
+        fig_dist = px.histogram(
+            filtered_df, 
+            x="Maximum_Monthly_Liters", 
+            color="Status",
+            barmode="overlay",
+            color_discrete_map={"Unfunded": "#475569", "Funded": "#10b981"},
+            nbins=50
+        )
         
         fig_dist.update_layout(
-            yaxis_title="Predicted True Potential (Liters)",
+            xaxis_title="Predicted True Potential (Liters)",
+            yaxis_title="Count",
             paper_bgcolor="rgba(0,0,0,0)", 
             plot_bgcolor="rgba(0,0,0,0)", 
             font_color="#e2e8f0",
-            showlegend=False
+            legend_title="",
+            legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99)
         )
         st.plotly_chart(fig_dist, use_container_width=True)
         
     with col1b:
+        # Strategic ROI (Average Volume Lift)
+        st.markdown("### Strategic ROI (Average Volume Lift)")
+        
+        lift_df = filtered_df.copy()
+        lift_df["Status"] = lift_df["Trade_Spend_Allocation"].apply(lambda x: "Funded" if x > 0 else "Unfunded")
+        lift_stats = lift_df.groupby("Status")["Volume_Lift"].mean().reset_index()
+        lift_stats = lift_stats.sort_values("Volume_Lift", ascending=True)
+        
+        fig_roi_bar = px.bar(
+            lift_stats, 
+            y="Status", 
+            x="Volume_Lift", 
+            orientation="h",
+            color="Status",
+            color_discrete_map={"Unfunded": "#475569", "Funded": "#10b981"},
+            text_auto=".1f"
+        )
+        
+        fig_roi_bar.update_layout(
+            xaxis_title="Average Expected Volume Lift (Liters)",
+            yaxis_title="",
+            paper_bgcolor="rgba(0,0,0,0)", 
+            plot_bgcolor="rgba(0,0,0,0)", 
+            font_color="#e2e8f0",
+            showlegend=False,
+            height=220,
+            margin=dict(t=10, b=10)
+        )
+        st.plotly_chart(fig_roi_bar, use_container_width=True)
+        
         # Tier ROI Comparison
+
         st.markdown("### ROI Comparison by Package Tier")
         tier_stats = funded_df.groupby("Trade_Spend_Allocation").agg(
             Spend=("Trade_Spend_Allocation", "sum"),
@@ -587,7 +625,7 @@ if outlet_id in df["Outlet_ID"].values:
         fig_single_bar = go.Figure(go.Indicator(
             mode = "number+gauge+delta",
             value = outlet_row.get('Maximum_Monthly_Liters', 0.0),
-            domain = {'x': [0.2, 1], 'y': [0, 1]},
+            domain = {'x': [0.15, 1], 'y': [0, 1]},
             title = {'text': "<b>Volume</b><br><span style='color: gray; font-size:0.8em'>Liters</span>"},
             delta = {'reference': outlet_row.get('Avg_Monthly_Volume', 0.0), 'position': "top"},
             gauge = {
@@ -608,8 +646,8 @@ if outlet_id in df["Outlet_ID"].values:
             paper_bgcolor="rgba(0,0,0,0)", 
             plot_bgcolor="rgba(0,0,0,0)", 
             font_color="#e2e8f0", 
-            height=180,
-            margin=dict(l=150, r=50, t=30, b=30) 
+            height=250,
+            margin=dict(l=100, r=20, t=40, b=40) 
         )
         
         st.plotly_chart(fig_single_bar, use_container_width=True)
@@ -671,7 +709,14 @@ if outlet_id in df["Outlet_ID"].values:
             fig_radar_single = go.Figure()
             fig_radar_single.add_trace(go.Scatterpolar(r=avg_grav_all, theta=gravity_cols, fill='toself', name='Network Average', marker_color="#475569"))
             fig_radar_single.add_trace(go.Scatterpolar(r=single_grav, theta=gravity_cols, fill='toself', name='This Outlet', marker_color="#f59e0b"))
-            fig_radar_single.update_layout(polar=dict(radialaxis=dict(visible=False)), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", height=300)
+            fig_radar_single.update_layout(
+                polar=dict(radialaxis=dict(visible=False)), 
+                paper_bgcolor="rgba(0,0,0,0)", 
+                plot_bgcolor="rgba(0,0,0,0)", 
+                font_color="#e2e8f0", 
+                height=400,
+                margin=dict(l=30, r=30, t=30, b=30)
+            )
             st.plotly_chart(fig_radar_single, use_container_width=True)
 
 else:
