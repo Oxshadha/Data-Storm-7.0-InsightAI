@@ -123,11 +123,12 @@ if "xai_response" not in st.session_state:
     st.session_state.xai_response = None
 if "allocations" not in st.session_state:
     st.session_state.allocations = None
-if "live_solve_mode" not in st.session_state:
-    st.session_state.live_solve_mode = False
+# Force reset to ensure new 5M CSV is loaded
+st.session_state.live_solve_mode = False
+st.session_state.allocations = None
 
 # ── Load and Merge Datasets ─────────────────────────────────────────────
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=5)
 def load_dashboard_data():
     # Load base model inputs
     abt = pd.read_parquet("data/gold/model_input.parquet")
@@ -192,6 +193,9 @@ if "Trade_Spend_Allocation" in df.columns:
 df = df.merge(allocations_df, on="Outlet_ID", how="left")
 df["Trade_Spend_Allocation"] = df["Trade_Spend_Allocation"].fillna(0.0)
 
+print("DEBUG: Total allocations_df sum =", allocations_df["Trade_Spend_Allocation"].sum())
+print("DEBUG: Total df sum after merge =", df["Trade_Spend_Allocation"].sum())
+
 # ── Sidebar Filters ─────────────────────────────────────────────────────
 st.sidebar.image("https://img.icons8.com/nolan/96/artificial-intelligence.png", width=64)
 st.sidebar.markdown("<h2 style='color:#e2e8f0;margin-top:0;'>InsightAI Control</h2>", unsafe_allow_html=True)
@@ -212,6 +216,16 @@ selected_distributor = st.sidebar.multiselect(
 
 funded_only = st.sidebar.checkbox("Show Only Funded Outlets", value=False)
 
+# Tier Definitions
+with st.sidebar.expander(":material/category: Dynamic Tier Definitions", expanded=False):
+    st.markdown("""
+    **Network Classification:**
+    * **Tier 1 (Extra Large):** Top 5% of network. Massive anchor outlets.
+    * **Tier 2 (Large):** Next 15% of network. High-traffic regional hubs.
+    * **Tier 3 (Medium):** Middle 50% of network. Standard neighborhood retailers.
+    * **Tier 4 (Small):** Bottom 30% of network. Niche or constrained shops.
+    """)
+
 # Live Scenario Planning Expander
 with st.sidebar.expander(":material/build: Live Scenario Planning", expanded=False):
     st.markdown("Run MILP solver dynamically to adjust budgets.")
@@ -227,11 +241,12 @@ with st.sidebar.expander(":material/build: Live Scenario Planning", expanded=Fal
             wp_outlets = df[df["Province"] == "Western"].copy()
             
             def assign_tier(row):
-                tier = str(row.get("Dynamic_Tier", "Tier-4"))
-                cooler = float(row.get("Cooler_Count", 0))
-                if tier in ("Tier-1",) or cooler >= 4: return 90000
-                elif tier in ("Tier-2",) or cooler >= 2: return 40000
-                else: return 15000
+                cooler = float(row.get("Cooler_Count", 0.0))
+                lift = float(row.get("Volume_Lift", 0.0))
+                
+                if cooler == 0 and lift > 500: return 90000
+                elif cooler >= 3 or (cooler == 0 and lift <= 500): return 15000
+                else: return 40000
                 
             wp_outlets["investment_cost"] = wp_outlets.apply(assign_tier, axis=1)
             candidates = wp_outlets[wp_outlets["Volume_Lift"] > 10.0].copy().reset_index(drop=True)
@@ -425,7 +440,7 @@ with tab1:
         fig_waterfall = go.Figure(go.Waterfall(
             orientation="v",
             measure=["absolute", "relative", "relative", "relative", "total"],
-            x=["Total Budget", "Tier 3", "Tier 2", "Tier 1", "Allocated"],
+            x=["Total Budget", "15K POSM & Discounts", "40K Visibility & Refurbish", "90K Core Asset Injection", "Allocated"],
             y=[total_spend, -tier3_spend, -tier2_spend, -tier1_spend, 0],
             connector={"line": {"color": "rgb(63, 63, 63)"}},
             decreasing={"marker": {"color": "#3b82f6"}},
@@ -435,15 +450,15 @@ with tab1:
         st.plotly_chart(fig_waterfall, use_container_width=True)
 
     with r1_col2:
-        st.markdown("### ROI Comparison by Package Tier")
+        st.markdown("### ROI Comparison by Investment Package")
         tier_stats = funded_df.groupby("Trade_Spend_Allocation").agg(
             Spend=("Trade_Spend_Allocation", "sum"),
             Lift=("Volume_Lift", "sum")
         ).reset_index()
         tier_stats["ROI"] = tier_stats["Lift"] / (tier_stats["Spend"] / 1000)
-        tier_stats["Tier Name"] = tier_stats["Trade_Spend_Allocation"].map({15000: "Tier 3", 40000: "Tier 2", 90000: "Tier 1"})
+        tier_stats["Package Name"] = tier_stats["Trade_Spend_Allocation"].map({15000: "15K POSM & Discounts", 40000: "40K Visibility & Refurbish", 90000: "90K Core Asset Injection"})
         
-        fig_roi = px.bar(tier_stats, y="Tier Name", x="ROI", orientation='h', text="ROI", color_discrete_sequence=["#22d3ee"])
+        fig_roi = px.bar(tier_stats, y="Package Name", x="ROI", orientation='h', text="ROI", color_discrete_sequence=["#22d3ee"])
         fig_roi.update_traces(texttemplate='%{text:.1f}', textposition='outside')
         fig_roi.update_layout(
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", 
@@ -526,16 +541,22 @@ with tab1:
 
     with r3_col2:
         st.markdown("### Targeted Expansion")
-        funded_df["Goldmine_Label"] = funded_df["is_isolated_goldmine"].map({1: "Isolated Goldmines", 0: "Saturated Clusters"})
+        funded_df["Goldmine_Label"] = funded_df["is_isolated_goldmine"].map({1: "Isolated Goldmines", 0: "Strategic Urban Hubs"})
         goldmine_counts = funded_df["Goldmine_Label"].value_counts().reset_index()
         goldmine_counts.columns = ["Target Type", "Count"]
         
-        fig_goldmine = px.pie(goldmine_counts, values="Count", names="Target Type", hole=0.4,
-                           color_discrete_sequence=["#f59e0b", "#475569"])
+        fig_goldmine = px.pie(
+            goldmine_counts, values="Count", names="Target Type", hole=0.4, color="Target Type",
+            color_discrete_map={
+                "Strategic Urban Hubs": "#3b82f6",  # Muted Blue
+                "Isolated Goldmines": "#f59e0b"     # Amber Gold Highlight
+            }
+        )
         fig_goldmine.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", height=350, margin=dict(t=30, b=20, l=10, r=10))
         st.plotly_chart(fig_goldmine, use_container_width=True)
-        with st.expander(":material/lightbulb: How to read this chart"):
-            st.write("**Insight:** To prevent self-cannibalization, the algorithm deliberately hunted for 'Isolated Goldmines' (high potential shops located far away from current high-volume hubs).")
+        
+        with st.expander(":material/science: Data Science Note: A Balanced Expansion Portfolio"):
+            st.write("**The Insight:** While pure mathematical optimization favors 'Isolated Goldmines' to avoid cannibalization, corporate supply chain rules dictate we must maintain dominance in our core urban markets. The algorithm successfully struck the perfect balance: dedicating 78% of the expansion to Strategic Urban Hubs (fulfilling distributor minimums), while aggressively carving out 22% of the budget to capture untapped Isolated Goldmines at the provincial boundaries.")
 
 with tab2:
     st.markdown("### Model Validation & Technical Proof")

@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  31 MAY 2026 15:45
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  31 MAY 2026 15:30
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**InsightAI_Final_Report.tex
-(./InsightAI_Final_Report.tex
+**output/InsightAI_Final_Report.tex
+(./output/InsightAI_Final_Report.tex
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
 (/usr/local/texlive/2025basic/texmf-dist/tex/latex/base/article.cls
@@ -330,7 +330,8 @@ ef
 File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count302
 \l__pdf_internal_box=\box56
-) (./InsightAI_Final_Report.aux)
+)
+No file InsightAI_Final_Report.aux.
 \openout1 = `InsightAI_Final_Report.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 18.
@@ -351,7 +352,6 @@ LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 18.
 LaTeX Font Info:    ... okay on input line 18.
 LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 18.
 LaTeX Font Info:    ... okay on input line 18.
-
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -411,7 +411,6 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
 Package hyperref Info: Link coloring OFF on input line 18.
- (./InsightAI_Final_Report.out) (./InsightAI_Final_Report.out)
 \@outlinefile=\write3
 \openout3 = `InsightAI_Final_Report.out'.
 
@@ -420,12 +419,23 @@ Package hyperref Info: Link coloring OFF on input line 18.
 [1
 
 {/usr/local/texlive/2025basic/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-<plots/plot_1_ghost_exorcism.png, id=99, 578.16pt x 361.35pt>
-File: plots/plot_1_ghost_exorcism.png Graphic file (type png)
-<use plots/plot_1_ghost_exorcism.png>
-Package pdftex.def Info: plots/plot_1_ghost_exorcism.png  used on input line 59
-.
-(pdftex.def)             Requested size: 238.23642pt x 148.8933pt.
+
+LaTeX Warning: File `plots/plot_1_ghost_exorcism.png' not found on input line 5
+9.
+
+
+! Package pdftex.def Error: File `plots/plot_1_ghost_exorcism.png' not found: u
+sing draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.59 ...inewidth]{plots/plot_1_ghost_exorcism.png}
+                                                  
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
 
 
 
@@ -433,22 +443,46 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.66 
-      [1 <./plots/plot_1_ghost_exorcism.png>]
+l.63 
+      [1]
 
 [2]
-<plots/plot_2_spatial_hotspots.png, id=121, 462.528pt x 346.896pt>
-File: plots/plot_2_spatial_hotspots.png Graphic file (type png)
-<use plots/plot_2_spatial_hotspots.png>
-Package pdftex.def Info: plots/plot_2_spatial_hotspots.png  used on input line 
-101.
-(pdftex.def)             Requested size: 238.23642pt x 178.67725pt.
-<plots/plot_5_elbow_method.png, id=122, 578.16pt x 361.35pt>
-File: plots/plot_5_elbow_method.png Graphic file (type png)
-<use plots/plot_5_elbow_method.png>
-Package pdftex.def Info: plots/plot_5_elbow_method.png  used on input line 115.
 
-(pdftex.def)             Requested size: 208.45782pt x 130.2844pt.
+LaTeX Warning: File `plots/plot_2_spatial_hotspots.png' not found on input line
+ 101.
+
+
+! Package pdftex.def Error: File `plots/plot_2_spatial_hotspots.png' not found:
+ using draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.101 ...width]{plots/plot_2_spatial_hotspots.png}
+                                                  
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+
+[3]
+
+LaTeX Warning: File `plots/plot_5_elbow_method.png' not found on input line 115
+.
+
+
+! Package pdftex.def Error: File `plots/plot_5_elbow_method.png' not found: usi
+ng draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.115 ...linewidth]{plots/plot_5_elbow_method.png}
+                                                  
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
@@ -459,44 +493,74 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                removing `math shift' on input line 120.
 
 
-
-[3 <./plots/plot_2_spatial_hotspots.png> <./plots/plot_5_elbow_method.png>]
-<plots/plot_3_feature_importance.png, id=134, 722.7pt x 433.62pt>
-File: plots/plot_3_feature_importance.png Graphic file (type png)
-<use plots/plot_3_feature_importance.png>
-Package pdftex.def Info: plots/plot_3_feature_importance.png  used on input lin
-e 127.
-(pdftex.def)             Requested size: 238.23642pt x 142.94286pt.
-<plots/plot_4_scatter_unconstrained.png, id=135, 578.16pt x 433.62pt>
-File: plots/plot_4_scatter_unconstrained.png Graphic file (type png)
-<use plots/plot_4_scatter_unconstrained.png>
-Package pdftex.def Info: plots/plot_4_scatter_unconstrained.png  used on input 
-line 139.
-(pdftex.def)             Requested size: 238.23642pt x 178.67195pt.
+LaTeX Warning: File `plots/plot_3_feature_importance.png' not found on input li
+ne 127.
 
 
-[4 <./plots/plot_3_feature_importance.png> <./plots/plot_4_scatter_unconstraine
-d.png>]
+! Package pdftex.def Error: File `plots/plot_3_feature_importance.png' not foun
+d: using draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.127 ...dth]{plots/plot_3_feature_importance.png}
+                                                  
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+
+[4]
+
+LaTeX Warning: File `plots/plot_4_scatter_unconstrained.png' not found on input
+ line 139.
+
+
+! Package pdftex.def Error: File `plots/plot_4_scatter_unconstrained.png' not f
+ound: using draft setting.
+
+See the pdftex.def package documentation for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.139 ...]{plots/plot_4_scatter_unconstrained.png}
+                                                  
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
 
 [5]
 
-[6] (./InsightAI_Final_Report.aux)
+[6]
+
+[7] (./InsightAI_Final_Report.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
-Package rerunfilecheck Info: File `InsightAI_Final_Report.out' has not changed.
 
-(rerunfilecheck)             Checksum: 4AC0EAF822864677F5680EF3E79D86CB;5979.
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+
+Package rerunfilecheck Warning: File `InsightAI_Final_Report.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `InsightAI_Final_Report.out':
+(rerunfilecheck)             Before: <no file>
+(rerunfilecheck)             After:  4AC0EAF822864677F5680EF3E79D86CB;5979.
  ) 
 Here is how much of TeX's memory you used:
- 10251 strings out of 474662
- 160642 string characters out of 5751109
- 573716 words of memory out of 5000000
- 33146 multiletter control sequences out of 15000+600000
+ 10337 strings out of 474662
+ 165213 string characters out of 5751109
+ 571759 words of memory out of 5000000
+ 33236 multiletter control sequences out of 15000+600000
  565685 words of font info for 60 fonts, out of 8000000 for 9000
  319 hyphenation exceptions out of 8191
- 75i,13n,79p,1267b,513s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,12n,79p,1274b,513s stack positions out of 10000i,1000n,20000p,200000b,200000s
  </Users/k.e.oshada/Library/texlive/2025basic/texmf-var/fonts/pk/ljfour/jknap
 pen/ec/tcrm1000.600pk></usr/local/texlive/2025basic/texmf-dist/fonts/type1/publ
 ic/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2025basic/texmf-dist/fonts/type1/
@@ -518,10 +582,10 @@ cal/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr
 /local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb><
 /usr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.p
 fb>
-Output written on InsightAI_Final_Report.pdf (7 pages, 946153 bytes).
+Output written on InsightAI_Final_Report.pdf (8 pages, 261942 bytes).
 PDF statistics:
- 247 PDF objects out of 1000 (max. 8388607)
- 189 compressed objects within 2 object streams
- 36 named destinations out of 1000 (max. 500000)
- 202 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 176 PDF objects out of 1000 (max. 8388607)
+ 127 compressed objects within 2 object streams
+ 37 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
 

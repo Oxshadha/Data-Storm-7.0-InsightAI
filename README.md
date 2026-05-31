@@ -10,6 +10,19 @@ Our pipeline bypasses this by utilizing a **Spatio-Temporal Causal Framework**. 
 
 ---
 
+## 🏆 Final Deliverables Mapping
+
+This repository is structured to perfectly map to the 5 mandatory deliverables of the Data Storm 7.0 challenge:
+
+1. **The "Latent Potential" Output:** `output/insightai_predictions.csv` contains the $p90$ unconstrained January 2026 volume predictions for all outlets.
+2. **The Marketing Spend Allocation Output:** `output/insightai_budget_allocations.csv` contains our exact MILP-optimized investment packages (15K Merchandising, 40K Refurbish, 90K New Cooler) for the Western province.
+3. **The Enterprise Codebase:** This entire repository. See the *How to Run* section below for zero-friction execution.
+4. **The Outlet Intelligence Web App:** Our Streamlit dashboard (`app.py`) provides an interactive executive view, featuring an AI "Decision Translator" for non-technical stakeholders.
+5. **The Comprehensive Methodology Paper:** `output/InsightAI_Final_Report.pdf` is our 10-page academic submission detailing the Spatio-Temporal math, data cleaning, and our GenAI Transparency Log.
+6. **(Bonus) Executive Pitch Deck:** A presentation outline (`output/Executive_Pitch_Deck_Outline.md`) structured to translate our complex math into a powerful C-suite business strategy.
+
+---
+
 ## 🏗️ Architecture: The Lakehouse Pipeline
 
 Our codebase strictly enforces a Lakehouse layer separation to ensure data hygiene, reproducibility, and analytical rigor.

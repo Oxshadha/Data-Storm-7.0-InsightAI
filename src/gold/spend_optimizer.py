@@ -43,18 +43,24 @@ def _assign_investment_tier(row: pd.Series) -> int:
     Uses Dynamic_Tier (from quantile-based reclassification in Silver)
     to map each outlet to one of three trade marketing packages.
     """
-    tier = str(row.get("Dynamic_Tier", "Tier-4"))
-    cooler = float(row.get("Cooler_Count", 0))
-
-    # Tier 1: High-volume hubs (large grocery, major outlets with coolers)
-    if tier in ("Tier-1",) or cooler >= 4:
+    cooler = float(row.get("Cooler_Count", 0.0))
+    lift = float(row.get("volume_lift", 0.0))
+    
+    # 90K Core Asset Injection (New Cooler)
+    # Target: High potential shops (Lift > 500) that have severe hardware bottlenecks (0 coolers)
+    if cooler == 0 and lift > 500:
         return 90000
-    # Tier 2: Medium outlets
-    elif tier in ("Tier-2",) or cooler >= 2:
-        return 40000
-    # Tier 3: Small kades, minimal infrastructure
-    else:
+        
+    # 15K POSM & Trade Discounts
+    # Target 1: Saturated giants (3+ coolers) that just need promotions to move volume.
+    # Target 2: Small low-potential shops (0 coolers, lift <= 500) that only justify basic posters.
+    elif cooler >= 3 or (cooler == 0 and lift <= 500):
         return 15000
+        
+    # 40K Visibility & Refurbishment
+    # Target: The middle ground (1-2 coolers). Fix up their existing hardware and add billboards.
+    else:
+        return 40000
 
 
 def run_spend_optimizer(config: dict | None = None) -> None:
@@ -73,30 +79,33 @@ def run_spend_optimizer(config: dict | None = None) -> None:
     preds_df = pd.read_csv(preds_path)
     abt_df = read_parquet(abt_path)
 
+    # Group by Outlet_ID to get static properties (last record per outlet)
+    keep_cols = [
+        "Outlet_ID", "Distributor_ID", "Region", "Cooler_Count",
+        "Volume_Liters", "Avg_Monthly_Volume", "is_isolated_goldmine",
+        "Dynamic_Tier"
+    ]
+    # Only keep columns that exist
+    keep_cols = [c for c in keep_cols if c in abt_df.columns]
+
+    outlets_last = (
+        abt_df.sort_values(["Year", "Month"])
+        .groupby("Outlet_ID")
+        .last()
+        .reset_index()
+    )
+
     # ── Filter for Western Province Outlets ───────────────────────────────
     wp_distributors = ["DIST_W_01", "DIST_W_02", "DIST_W_03"]
     logger.info(f"Filtering ABT for Western Province distributors: {wp_distributors}")
-    wp_abt = abt_df[abt_df["Distributor_ID"].isin(wp_distributors)]
+    wp_outlets = outlets_last[outlets_last["Distributor_ID"].isin(wp_distributors)].copy()
+    
+    # Select columns
+    wp_outlets = wp_outlets[keep_cols]
 
-    if wp_abt.empty:
-        logger.error("No Western Province records found in ABT. Cannot run optimization.")
+    if wp_outlets.empty:
+        logger.error("No Western Province records found. Cannot run optimization.")
         return
-
-    # Group by Outlet_ID to get static properties (last record per outlet)
-    logger.info("Extracting static outlet properties...")
-    keep_cols = [
-        "Outlet_ID", "Distributor_ID", "Cooler_Count", "Dynamic_Tier",
-        "Avg_Monthly_Volume", "is_isolated_goldmine",
-    ]
-    # Only keep columns that exist
-    keep_cols = [c for c in keep_cols if c in wp_abt.columns]
-
-    wp_outlets = (
-        wp_abt.sort_values(["Year", "Month"])
-        .groupby("Outlet_ID")
-        .last()
-        .reset_index()[keep_cols]
-    )
 
     # Merge with predictions to get January 2026 Maximum Potential
     wp_outlets = wp_outlets.merge(preds_df, on="Outlet_ID", how="inner")
@@ -128,7 +137,7 @@ def run_spend_optimizer(config: dict | None = None) -> None:
     # ── Cost Tier Distribution ────────────────────────────────────────────
     tier_counts = candidates["investment_cost"].value_counts().sort_index()
     for cost, count in tier_counts.items():
-        label = {15000: "Tier 3 (Merchandising)", 40000: "Tier 2 (Refurbish)", 90000: "Tier 1 (New Cooler)"}
+        label = {15000: "Tier 3 (POSM & Discounts)", 40000: "Tier 2 (Refurbish)", 90000: "Tier 1 (New Cooler)"}
         logger.info(f"  {label.get(cost, 'Unknown')}: {count:,} outlets @ LKR {cost:,}")
 
     # ── Initialize OR-Tools MILP Solver ───────────────────────────────────
@@ -313,7 +322,7 @@ def run_spend_optimizer(config: dict | None = None) -> None:
     # Winner tier breakdown
     winner_tiers = winners["investment_cost"].value_counts().sort_index()
     for cost, count in winner_tiers.items():
-        label = {15000: "Tier 3 (Merch)", 40000: "Tier 2 (Refurb)", 90000: "Tier 1 (Cooler)"}
+        label = {15000: "Tier 3 (Discounts)", 40000: "Tier 2 (Refurbish)", 90000: "Tier 1 (Cooler)"}
         logger.info(f"  {label.get(cost, '?')}: {count:,} outlets | LKR {cost * count:,}")
 
     # Summary by distributor
