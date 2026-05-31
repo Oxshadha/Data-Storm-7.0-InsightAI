@@ -769,7 +769,7 @@ if outlet_id in df["Outlet_ID"].values:
                 plot_bgcolor="rgba(0,0,0,0)", 
                 font_color="#e2e8f0", 
                 height=400,
-                margin=dict(l=30, r=30, t=30, b=30)
+                margin=dict(l=90, r=90, t=50, b=50)
             )
             st.plotly_chart(fig_radar_single, use_container_width=True)
             
