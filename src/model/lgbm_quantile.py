@@ -192,10 +192,34 @@ def run_lgbm_model(config: dict | None = None) -> None:
     
     final_output.to_csv(out_path, index=False)
     
+    # Save Feature Importances (Gain) for the p90 model to drive the Dashboard
+    p90_model = models[0.90]
+    importances = p90_model.booster_.feature_importance(importance_type='gain')
+    
+    # Categorize features for the dashboard
+    def categorize_feature(fname):
+        if fname in interaction_cols:
+            return "Interaction"
+        elif fname in temporal_cols:
+            return "Temporal"
+        elif fname in poi_cols or fname in catchment_cols:
+            return "Spatial"
+        else:
+            return "Master"
+            
+    fi_df = pd.DataFrame({
+        'feature_name': features,
+        'gain_importance': importances,
+        'feature_group': [categorize_feature(f) for f in features]
+    })
+    fi_df = fi_df.sort_values(by='gain_importance', ascending=False)
+    fi_df.to_csv("output/lgbm_feature_importances.csv", index=False)
+    
     logger.info("=" * 60)
     logger.info("🚀 PHASE 5 COMPLETE!")
     logger.info(f"Total projected network demand for Jan 2026 (p90 Maximum): {final_output['Maximum_Monthly_Liters'].sum():,.2f} Liters")
     logger.info(f"Final predictions saved strictly to: {out_path} (Format: Outlet_ID, Maximum_Monthly_Liters)")
+    logger.info(f"Feature importances (gain) saved to: output/lgbm_feature_importances.csv")
     logger.info("=" * 60)
 
 
