@@ -558,8 +558,8 @@ with tab2:
         fig_scatter.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
         st.plotly_chart(fig_scatter, use_container_width=True)
         
-        with st.expander(":material/lightbulb: How to defend this chart to judges"):
-            st.write("**The Defense for Vertical Banding:** Technical judges will notice the rigid vertical columns on the X-axis. This is *not* an imputation error. It is the mathematical signature of rigid, legacy supply quotas (e.g., shops capped precisely at 600L or 650L). Our LightGBM model successfully ignored these artificial caps, fanning the predictions (Y-axis) into a continuous, natural demand distribution.")
+        with st.expander(":material/science: Data Science Note: Identifying Censored Demand"):
+            st.write("**Overcoming Historical Quotas:** The rigid vertical alignments on the X-axis represent historical supply-side censoring (e.g., strict distributor quotas capping sales at exactly 600L). By utilizing spatial interaction features, the Quantile Regressor successfully maps the *true* underlying demand (Y-axis), transforming constrained step-functions into a continuous natural distribution.")
         
         # Competitive Saturation
         st.markdown("### Density Distribution (Saturated Zones Only)")
@@ -585,20 +585,7 @@ with tab2:
             st.plotly_chart(fig_fi, use_container_width=True)
         else:
             st.warning("Feature importances not found. Please re-run the prediction stage.")
-            
-        # Gravity Radar
-        st.markdown("### Gravity Footfall Signature")
-        gravity_cols = [c for c in filtered_df.columns if c.startswith("gravity_group_")]
-        if gravity_cols:
-            avg_grav_all = filtered_df[gravity_cols].mean().values
-            avg_grav_funded = filtered_df[filtered_df["Trade_Spend_Allocation"] > 0][gravity_cols].mean().values if total_funded > 0 else np.zeros(len(gravity_cols))
-            
-            fig_radar = go.Figure()
-            fig_radar.add_trace(go.Scatterpolar(r=avg_grav_all, theta=gravity_cols, fill='toself', name='Network Average', marker_color="#475569"))
-            if total_funded > 0:
-                fig_radar.add_trace(go.Scatterpolar(r=avg_grav_funded, theta=gravity_cols, fill='toself', name='Funded Outlets', marker_color="#10b981"))
-            fig_radar.update_layout(polar=dict(radialaxis=dict(visible=False)), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
-            st.plotly_chart(fig_radar, use_container_width=True)
+
 
 
 # ── Drill-Down Panel ────────────────────────────────────────────────────
