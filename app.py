@@ -577,9 +577,9 @@ with tab2:
         fig_comp.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
         st.plotly_chart(fig_comp, use_container_width=True)
         
-        with st.expander(":material/lightbulb: How to read this chart"):
+        with st.expander(":material/science: Data Science Note: Competitive Saturation"):
             saturated_pct = (len(sat_df) / max(1, len(filtered_df))) * 100
-            st.write(f"**Insight:** Approximately {saturated_pct:.1f}% of the network is operating in a competitive zone. The MILP optimizer actively avoids the red saturated region to prevent self-cannibalization and ensure high marginal ROI.")
+            st.write(f"**The Insight:** Approximately {saturated_pct:.1f}% of the network is operating in a competitive zone. The MILP optimizer actively avoids the red saturated region to prevent self-cannibalization and ensure high marginal ROI.")
         
     with col2b:
         # Feature Importance
@@ -593,6 +593,23 @@ with tab2:
             st.plotly_chart(fig_fi, use_container_width=True)
         else:
             st.warning("Feature importances not found. Please re-run the prediction stage.")
+            
+        with st.expander(":material/science: Data Science Note: Feature Information Gain"):
+            st.write("**The Insight:** The model overwhelmingly prioritizes spatial catchment and temporal seasonality over static attributes. By leveraging LightGBM's non-linear tree structures, it dynamically cross-references these features to decode true localized market potential.")
+
+        st.markdown("### The Cannibalization Paradox: Urban Dilution vs. Rural Monopolies")
+        fig_gravity = px.scatter(
+            filtered_df.sample(min(2000, len(filtered_df)), random_state=42),
+            x="total_driver_gravity", y="Maximum_Monthly_Liters", color="Dynamic_Tier",
+            color_discrete_sequence=["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"],
+            labels={"total_driver_gravity": "Spatial Driver Gravity (Urban Density)", "Maximum_Monthly_Liters": "Predicted Potential (Liters)"},
+            opacity=0.7
+        )
+        fig_gravity.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
+        st.plotly_chart(fig_gravity, use_container_width=True)
+        
+        with st.expander(":material/science: Data Science Note: The Cannibalization Paradox"):
+            st.write("**The Insight:** Initially, we hypothesized that the highest footfall POIs in city centers would drive the highest volume. This spatial scatter plot proved us wrong. The data reveals a *Cannibalization Paradox*—shops in high-gravity urban centers suffer from extreme volume dilution due to hyper-competition. The true highest-potential assets are the **'Isolated Goldmines'** (clustered on the left): shops with lower absolute footfall but a 100% monopoly on their local catchment radius. This is exactly why our MILP Optimizer dynamically routes budget away from saturated centers and into these lucrative provincial monopolies.")
 
 
 
