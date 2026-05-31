@@ -340,11 +340,8 @@ with tab1:
     """, unsafe_allow_html=True)
     
     # Prepare map data and strictly cast types to prevent PyDeck JSON serialization crashes
-    map_cols = ["Outlet_ID", "Latitude", "Longitude", "Dynamic_Tier", "Trade_Spend_Allocation", "Volume_Lift"]
+    map_cols = ["Outlet_ID", "Latitude", "Longitude", "Province", "Dynamic_Tier", "Trade_Spend_Allocation", "Volume_Lift"]
     map_df = filtered_df.dropna(subset=["Latitude", "Longitude"])[map_cols].copy()
-    
-    # Visually filter out synthetic noise points that fall into the Laccadive Sea
-    map_df = map_df[map_df["Longitude"] >= 79.845]
     
     map_df["Latitude"] = map_df["Latitude"].astype(float)
     map_df["Longitude"] = map_df["Longitude"].astype(float)
@@ -353,16 +350,25 @@ with tab1:
     map_df["Dynamic_Tier"] = map_df["Dynamic_Tier"].astype(str)
     map_df["Outlet_ID"] = map_df["Outlet_ID"].astype(str)
     
+    # Dynamic opacity to prevent dense areas from becoming a blob, while keeping sparse areas visible
+    def get_bg_color(prov):
+        if prov == "Western":
+            return [203, 213, 225, 100]  # Lower opacity for highly dense province
+        else:
+            return [226, 232, 240, 220]  # High opacity for sparse provinces
+            
+    map_df["bg_color"] = map_df["Province"].apply(get_bg_color)
+    
     # Convert to list of dicts (most stable format for PyDeck)
     bg_data = map_df[map_df["Trade_Spend_Allocation"] == 0].to_dict(orient="records")
     funded_data = map_df[map_df["Trade_Spend_Allocation"] > 0].to_dict(orient="records")
     
-    # Background layer (All outlets) - Brightened for visibility
+    # Background layer (All outlets) - Dynamic Density Coloring
     bg_layer = pdk.Layer(
         "ScatterplotLayer",
         data=bg_data,
         get_position="[Longitude, Latitude]",
-        get_color=[203, 213, 225, 160],  # Lighter Slate-300 for better dark mode contrast
+        get_color="bg_color",
         get_radius=80,
         pickable=True,
     )
