@@ -19,20 +19,27 @@
 
 ## Slide 3: The Balanced Expansion Portfolio
 * **Headline:** Data Science meets Corporate Reality.
-* **The Strategy:** Pure math would tell us to dump our entire 5M LKR budget into rural goldmines. But corporate supply chain rules dictate we must fulfill distributor minimums and maintain dominance in urban hubs.
-* **The Execution:** Our MILP (Mixed-Integer Linear Programming) Optimizer struck the perfect balance:
-  * **78% of Budget:** Deployed to *Strategic Urban Hubs* to maintain core market share.
-  * **22% of Budget:** Aggressively carved out to capture *Isolated Goldmines* for maximum incremental lift.
-* **The Packages:** (90K Core Asset Injection, 40K Visibility & Refurbishment, 15K POSM & Discounts) perfectly distributed to maximize ROI.
+* **The Strategy:** Pure math would tell us to dump our entire 5M LKR budget into rural goldmines. But corporate supply chain rules dictate we must fulfill distributor minimums and provide distinct promotional packages based on physical hardware needs.
+* **The Execution:** Our MILP (Mixed-Integer Linear Programming) Optimizer algorithmically exhausted the exact 5,000,000 LKR budget across **250 high-ROI outlets**.
+* **The Packages:**
+  * **90K Core Asset Injection:** Allocated to exactly 10 hardware-bottlenecked shops, yielding the highest ROI of 34.7 Liters per 1K LKR.
+  * **40K Visibility & Refurbishment:** Allocated to 20 mid-tier shops to fix broken assets and elevate visual presence.
+  * **15K POSM & Discounts:** Allocated to 220 saturated urban hubs for cost-effective footfall generation.
 
-## Slide 4: Generative AI as an Executive Advisory
+## Slide 4: Real-World Data Engineering Rigor
+* **Headline:** Math means nothing if the data is traveling through time.
+* **The Catch:** During pre-production testing, we discovered a subtle but massive "Time-Travel Data Bug." The optimization logic was inadvertently funding outlets that historically belonged to the Western Province but had since been transferred to other provincial distributors.
+* **The Fix:** We implemented a strict chronological sequence to ensure geographic filtering only occurs on the absolute *terminal state* of an outlet, permanently eliminating "Ghost Allocations."
+* **The Impact:** A flawless, airtight 5M LKR deployment mapped exactly to the real-time physical realities of the FMCG supply chain.
+
+## Slide 5: Generative AI as an Executive Advisory
 * **Headline:** From Black Box to Boardroom.
 * **The Problem:** Machine Learning outputs are dense matrices that Sales Reps cannot read.
 * **The Execution:** We built an *Outlet Intelligence Dashboard* powered by a GenAI Decision Translator. 
 * **The Impact:** A regional sales manager can click any shop on the map and receive a 3-sentence, business-friendly explanation of exactly *why* the AI chose to fund that shop, complete with spatial reasoning and growth gaps.
 
-## Slide 5: The Ground Rollout (Call to Action)
+## Slide 6: The Ground Rollout (Call to Action)
 * **Headline:** A practical roadmap for deployment.
-* **Month 1:** Deploy the 15K Merchandising packages to fast-track immediate brand visibility in Strategic Hubs.
+* **Month 1:** Deploy the 15K POSM packages to fast-track immediate brand visibility in Strategic Hubs.
 * **Month 2-3:** Execute the 90K Cooler deployments in the identified Isolated Goldmines (requires longer lead time for logistics).
 * **Evaluation:** Run the "Out-of-Time" (OOT) evaluation protocol after 90 days to mathematically prove the volume lift against our predictions.
