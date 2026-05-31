@@ -338,12 +338,12 @@ with tab1:
     bg_data = map_df[map_df["Trade_Spend_Allocation"] == 0].to_dict(orient="records")
     funded_data = map_df[map_df["Trade_Spend_Allocation"] > 0].to_dict(orient="records")
     
-    # Background layer (All outlets)
+    # Background layer (All outlets) - Brightened for visibility
     bg_layer = pdk.Layer(
         "ScatterplotLayer",
         data=bg_data,
         get_position="[Longitude, Latitude]",
-        get_color=[71, 85, 105, 120],
+        get_color=[203, 213, 225, 160],  # Lighter Slate-300 for better dark mode contrast
         get_radius=80,
         pickable=True,
     )
