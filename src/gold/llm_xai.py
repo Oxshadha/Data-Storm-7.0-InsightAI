@@ -82,9 +82,9 @@ def _generate_fallback_narrative(context: dict) -> str:
     # 4. Confidence & Risk
     if budget > 0:
         risk_profile = "Low Risk / High Reward" if is_goldmine else "Moderate Risk / High Reward"
-        risk_text = f"This volume prediction is statistically bound using a **p90 Quantile Confidence Interval**. This mathematically guarantees that we are 90% confident the outlet's true ceiling lies beneath {pot:,.1f} L/month. Given the robust data signals and local competition constraints, this allocation represents a **{risk_profile}** investment."
+        risk_text = f"This prediction is calculated using a strict 90% statistical confidence interval. In simple business terms, the AI is 90% certain that if we remove all supply constraints, this outlet has the capacity to reach {pot:,.1f} L/month, but is highly unlikely to exceed it. Because the ROI is exceptionally strong and competition is manageable, this is a **{risk_profile}** investment."
     else:
-        risk_text = f"This volume prediction is statistically bound using a **p90 Quantile Confidence Interval**. Because the projected marginal ROI does not meet the optimizer's rigorous threshold, deploying capital here currently carries an **Unfavorable Risk Profile** compared to other network alternatives."
+        risk_text = f"This prediction is calculated using a strict 90% statistical confidence interval. In simple business terms, the AI is 90% certain that even if we flood this outlet with unlimited coolers and supply, it will not exceed {pot:,.1f} L/month. Because the expected return does not justify the cost of deployment, investing capital here carries an **Unfavorable Risk Profile** compared to better opportunities in the network."
         
     p4 = f"<br><br>**Decision Confidence & Risk Assessment:**<br>{risk_text}"
     
@@ -145,7 +145,7 @@ RULES:
    <br><br>
    **Which factors increased or decreased the prediction:** (Explain which POI drivers pushed the score up/down, and conclude with the investment ROI).
    <br><br>
-   **Decision Confidence & Risk Assessment:** (Explain that the prediction is statistically bound using a p90 Quantile Confidence Interval, meaning the AI is 90% confident the true ceiling is beneath the predicted potential. Assess if the investment is Low/Moderate/High risk based on competition and ROI).
+   **Decision Confidence & Risk Assessment:** (State that the prediction uses a 90% statistical confidence interval. Crucially, explain what this means in simple, non-technical business terms: e.g., 'In simple terms, the AI is 90% certain that even with unlimited supply, the outlet will not exceed X Liters'. Assess if the investment is Low/Moderate/High risk based on competition and ROI).
 3. Write in a fluid, professional, and detailed business narrative style. Provide 2-3 comprehensive sentences per section. Do NOT write brief, robotic one-liners.
 4. Explicitly explain the business mechanics (e.g., how the specific footfall drivers physically bring in customers, or how the lack of competition guarantees market share).
 5. Bold key metrics for visual emphasis.
