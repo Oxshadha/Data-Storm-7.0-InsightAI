@@ -681,6 +681,7 @@ if outlet_id in df["Outlet_ID"].values:
         context = {
             "outlet_id": outlet_id,
             "tier": str(outlet_row.get("Dynamic_Tier", "Unknown")),
+            "cooler_count": int(outlet_row.get("Cooler_Count", 0)),
             "historical_avg": float(outlet_row.get("Avg_Monthly_Volume", 0.0)),
             "predicted_potential": float(outlet_row.get("Maximum_Monthly_Liters", 0.0)),
             "volume_lift": float(outlet_row.get("Volume_Lift", 0.0)),
@@ -696,15 +697,8 @@ if outlet_id in df["Outlet_ID"].values:
         with st.spinner("Analyzing location..."):
             explanation = explain_outlet(context)
             
-        st.markdown(
-            f"""
-            <div class="xai-box">
-                <strong>Model Decisional Insights:</strong><br>
-                <p style="margin-top: 10px; line-height: 1.6;">{explanation}</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown('<div class="xai-box"><strong>Model Decisional Insights:</strong></div>', unsafe_allow_html=True)
+        st.markdown(explanation, unsafe_allow_html=True)
         
         # Single outlet radar
         if gravity_cols:

@@ -47,38 +47,38 @@ def _generate_fallback_narrative(context: dict) -> str:
     comp_density = context.get("competition_density", 0.0)
     top_drivers = context.get("top_drivers", [])
     
-    # Paragraph 1: Potential and Tier
-    p1 = (
-        f"Outlet {outlet_id} is classified as a {tier} retailer with a True Market Potential of "
-        f"{pot:,.1f} Liters/month, representing a {growth_pct} expansion over its historical baseline. "
-    )
+    cooler_count = context.get("cooler_count", 0)
     
-    # Paragraph 2: Drivers (Spatial and Competitive)
-    drivers = []
+    # 1. Sales Prediction & Constraints
+    p1 = f"**1. Sales Prediction & Constraints:**<br>Outlet {outlet_id} is a {tier} retailer currently constrained to a historical average of {hist_avg:,.1f} L/month. With {cooler_count} coolers deployed, the model predicts a True Market Potential of **{pot:,.1f} L/month**, representing a **{growth_pct}** expansion if supply caps are removed."
+    
+    # 2. Local Environment & Competition
     if is_goldmine:
-        drivers.append("operates in an Untapped High-Traffic Zone with zero direct competitors within 1km")
+        env_text = "This location operates in an **Untapped High-Traffic Zone** with zero direct competitors within a 1km radius, offering a rare monopoly advantage."
     elif comp_density > 0.05:
-        drivers.append("operates in a highly saturated competitive zone, suggesting that promotions must target market share capture")
+        env_text = "The outlet operates in a highly saturated competitive zone, meaning any investment here is highly defensive and requires aggressive market share capture."
     else:
-        drivers.append("has a balanced spatial footprint with moderate competitive exposure")
-        
+        env_text = "The location holds a balanced spatial footprint with moderate competitive exposure."
+    p2 = f"<br><br>**2. Local Environment & Competition:**<br>{env_text}"
+    
+    # 3. Key Model Drivers
     if top_drivers:
         driver_names = [f"{d[0]} (Score: {d[1]:.1f})" for d in top_drivers[:2] if d[1] > 0]
         if driver_names:
-            drivers.append("benefits from strong local footfall driven by " + " and ".join(driver_names))
-            
-    if drivers:
-        p2 = f"This potential is unlocked because the outlet " + ", and ".join(drivers) + ". "
+            driver_text = "Volume lift is heavily driven upward by strong local footfall from " + " and ".join(driver_names) + "."
+        else:
+            driver_text = "Volume is driven by standard demographic patterns rather than specific POI spikes."
     else:
-        p2 = ""
+        driver_text = "Volume is driven by standard demographic patterns."
         
-    # Paragraph 3: Assets & Recommendations
     if budget > 0:
         roi = context.get("roi_per_1k", "0.0 L/1K LKR")
-        p3 = f"Recommendation: The AI has allocated LKR {budget:,} yielding a projected ROI of {roi}. Execute trade marketing activities to capture the {lift:,.1f}L volume lift."
+        rec_text = f"The optimizer allocated **LKR {budget:,}**, yielding a projected ROI of **{roi}**. Execute trade marketing to capture the **{lift:,.1f}L** volume lift."
     else:
-        p3 = "Recommendation: No additional budget allocated. Maintain standard distribution and monitor performance."
+        rec_text = "No additional budget allocated. Maintain standard distribution."
         
+    p3 = f"<br><br>**3. Key Model Drivers & Recommendation:**<br>{driver_text} {rec_text}"
+    
     return p1 + p2 + p3
 
 
@@ -108,12 +108,12 @@ def explain_outlet(context: dict) -> str:
             prompt = f"""
 You are an AI Trade Marketing Director for a beverage company in Sri Lanka.
 Analyze the provided OUTLET DATA PROFILE.
-Write a 3-sentence explanation for the Regional Sales Manager explaining exactly 
-WHY this specific outlet was chosen for budget allocation (or why it has high potential).
+Generate a structured, 3-part business explanation for the Regional Sales Manager explaining WHY this outlet was assigned its specific prediction and budget.
 
 OUTLET DATA PROFILE:
 - Outlet ID: {context.get('outlet_id', 'Unknown')}
 - Market Position: {context.get('tier', 'Unknown')}
+- Cooler Count: {context.get('cooler_count', 0)}
 - Historical Sales Average: {context.get('historical_avg', 0.0):.1f} Liters/month
 - True Market Potential: {context.get('predicted_potential', 0.0):.1f} Liters/month
 - Volume Lift: {context.get('volume_lift', 0.0):.1f} Liters/month ({context.get('growth_pct', '0%')})
@@ -128,12 +128,15 @@ Top Footfall Drivers:
 Decision Engine Reason: {context.get('funding_reason', 'N/A')}
 
 RULES:
-1. Do NOT use data science jargon (no 'SHAP', 'MILP', 'Decensoring', 'Gravity Model').
-2. Synthesize three angles: (a) Financial ROI, (b) Spatial/footfall drivers, (c) Competition gap.
+1. Do NOT use data science jargon (no 'SHAP', 'MILP', 'Decensoring').
+2. You MUST structure your response into exactly three sections using bold HTML breaks or Markdown headers:
+   **1. Sales Prediction & Constraints:** (Explain the gap between historical caps/coolers and predicted potential).
+   <br><br>
+   **2. Local Environment & Competition:** (Explain spatial mapping and competition intensity).
+   <br><br>
+   **3. Key Model Drivers & Recommendation:** (Explain which POI drivers pushed the score up/down, and conclude with the investment ROI).
 3. Be confident, concise, and business-focused.
-4. If the outlet is an "Untapped High-Traffic Zone" (goldmine), emphasize the strategic opportunity.
-5. End with a concrete action item based on the Recommended Investment.
-6. Use Markdown to **bold** key metrics (True Market Potential, Scores, Lift percentages) for visual emphasis.
+4. Bold key metrics for visual emphasis.
 """
             response = model.generate_content(prompt)
             return response.text.strip()
