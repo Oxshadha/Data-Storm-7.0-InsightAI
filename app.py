@@ -405,7 +405,7 @@ with tab1:
             x=["Total Budget", "Tier 3 (Merch)", "Tier 2 (Refurb)", "Tier 1 (Cooler)", "Allocated"],
             y=[total_spend, -tier3_spend, -tier2_spend, -tier1_spend, 0],
             connector={"line": {"color": "rgb(63, 63, 63)"}},
-            decreasing={"marker": {"color": ["#14b8a6", "#3b82f6", "#8b5cf6"]}},
+            decreasing={"marker": {"color": "#3b82f6"}},
             totals={"marker": {"color": "#10b981"}}
         ))
         fig_waterfall.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
