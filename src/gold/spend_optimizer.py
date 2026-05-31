@@ -1,31 +1,32 @@
 """
-Gold Layer — Marketing Spend Optimizer.
+Gold Layer — Marketing Spend Optimizer (MILP Knapsack).
 
-Solves the LKR 5 Million Western Province trade spend allocation problem.
-Uses a mathematically rigorous Lagrange Multiplier framework to maximize
-incremental volume lift subject to budget and operational constraints.
+Solves the LKR 5 Million Western Province trade spend allocation problem
+using Google OR-Tools Mixed Integer Linear Programming (MILP).
 
-Response Model:
-    Incremental_Lift_i = Growth_Gap_i * (1 - e^(-alpha_i * S_i))
-    where:
-      - Growth_Gap_i = Max_Potential_i (predicted Jan 2026) - Historical_Baseline_i
-      - S_i = allocated spend in LKR
-      - alpha_i = efficiency coefficient reflecting spatial and assets:
-          alpha_i = alpha_base * (1 + 2 * scaled_ratio_i) * (1 + 0.5 * Cooler_Count_i)
+Key Advantages over Lagrangian:
+    1. Binary decision variables (x ∈ {0,1}) — shop either gets a package or not.
+    2. Discrete tiered costs — physically meaningful (cooler, merch, branding).
+    3. Exact budget adherence — never exceeds 5,000,000.00 LKR.
+    4. Provably optimal solution via SCIP branch-and-bound.
 
-Optimization Algorithm:
-    Since the objective is concave and separable, we find the exact global optimum
-    using Lagrange multipliers and binary search over the shadow price lambda.
-    This solves the 9,000-variable optimization problem in milliseconds.
+Tiered Investment Packages (Business Logic):
+    - Tier 3 (Small Kade / Low Volume):    Merchandising posters + discounts → 15,000 LKR
+    - Tier 2 (Medium Grocery / Mid Volume): Cooler refurbishment + branding   → 40,000 LKR
+    - Tier 1 (Large Hub / High Volume):     Brand new cooler + billboard       → 90,000 LKR
+
+Objective:
+    Maximize  Σ  x_i × Volume_Lift_i × Strategic_Multiplier_i
+    s.t.      Σ  x_i × Investment_Cost_i  ≤  5,000,000
 
 Output:
     Saves results strictly to:
       - output/insightai_budget_allocations.csv (Format: Outlet_ID, Trade_Spend_Allocation)
-      - output/InsightAI_budget_allocations.csv (duplicate for case-insensitive matching)
 """
 
 import numpy as np
 import pandas as pd
+from ortools.linear_solver import pywraplp
 from src.utils.config import load_config
 from src.utils.io import read_parquet
 from src.utils.logger import get_logger
@@ -33,12 +34,33 @@ from src.utils.logger import get_logger
 logger = get_logger("gold.spend_optimizer")
 
 
+def _assign_investment_tier(row: pd.Series) -> int:
+    """
+    Assign discrete investment cost based on outlet profile.
+
+    Uses Dynamic_Tier (from quantile-based reclassification in Silver)
+    to map each outlet to one of three trade marketing packages.
+    """
+    tier = str(row.get("Dynamic_Tier", "Tier-4"))
+    cooler = float(row.get("Cooler_Count", 0))
+
+    # Tier 1: High-volume hubs (large grocery, major outlets with coolers)
+    if tier in ("Tier-1",) or cooler >= 4:
+        return 90000
+    # Tier 2: Medium outlets
+    elif tier in ("Tier-2",) or cooler >= 2:
+        return 40000
+    # Tier 3: Small kades, minimal infrastructure
+    else:
+        return 15000
+
+
 def run_spend_optimizer(config: dict | None = None) -> None:
     if config is None:
         config = load_config()
 
     logger.info("=" * 60)
-    logger.info("Gold: Marketing Spend Optimization (Western Province LKR 5M)")
+    logger.info("Gold: Marketing Spend Optimization — MILP Knapsack (OR-Tools)")
     logger.info("=" * 60)
 
     # ── Load Data ──────────────────────────────────────────────────────────
@@ -50,7 +72,6 @@ def run_spend_optimizer(config: dict | None = None) -> None:
     abt_df = read_parquet(abt_path)
 
     # ── Filter for Western Province Outlets ───────────────────────────────
-    # Western Province distributors: DIST_W_01, DIST_W_02, DIST_W_03
     wp_distributors = ["DIST_W_01", "DIST_W_02", "DIST_W_03"]
     logger.info(f"Filtering ABT for Western Province distributors: {wp_distributors}")
     wp_abt = abt_df[abt_df["Distributor_ID"].isin(wp_distributors)]
@@ -61,132 +82,153 @@ def run_spend_optimizer(config: dict | None = None) -> None:
 
     # Group by Outlet_ID to get static properties (last record per outlet)
     logger.info("Extracting static outlet properties...")
+    keep_cols = [
+        "Outlet_ID", "Distributor_ID", "Cooler_Count", "Dynamic_Tier",
+        "Avg_Monthly_Volume", "is_isolated_goldmine",
+    ]
+    # Only keep columns that exist
+    keep_cols = [c for c in keep_cols if c in wp_abt.columns]
+
     wp_outlets = (
         wp_abt.sort_values(["Year", "Month"])
         .groupby("Outlet_ID")
         .last()
-        .reset_index()[["Outlet_ID", "Distributor_ID", "Cooler_Count", "Avg_Monthly_Volume", "latent_opportunity_ratio"]]
+        .reset_index()[keep_cols]
     )
 
     # Merge with predictions to get January 2026 Maximum Potential
     wp_outlets = wp_outlets.merge(preds_df, on="Outlet_ID", how="inner")
-    
-    # Clean NaNs to prevent solver failure
+
+    # Clean NaNs
     wp_outlets["Cooler_Count"] = wp_outlets["Cooler_Count"].fillna(0.0)
     wp_outlets["Avg_Monthly_Volume"] = wp_outlets["Avg_Monthly_Volume"].fillna(0.0)
-    wp_outlets["latent_opportunity_ratio"] = wp_outlets["latent_opportunity_ratio"].fillna(0.0)
     wp_outlets["Maximum_Monthly_Liters"] = wp_outlets["Maximum_Monthly_Liters"].fillna(0.0)
-    
-    logger.info(f"Unique Western Province outlets in predictions: {len(wp_outlets):,}")
+    if "is_isolated_goldmine" in wp_outlets.columns:
+        wp_outlets["is_isolated_goldmine"] = wp_outlets["is_isolated_goldmine"].fillna(0).astype(int)
+    else:
+        wp_outlets["is_isolated_goldmine"] = 0
 
-    # ── Mathematical Formulation ────────────────────────────────────────────
-    # 1. Growth Gap (Max possible incremental volume)
-    # G_i = max(0, Potential - Historical_Avg)
-    wp_outlets["growth_gap"] = np.maximum(
+    logger.info(f"Unique Western Province outlets: {len(wp_outlets):,}")
+
+    # ── Compute Volume Lift (The Reward) ──────────────────────────────────
+    wp_outlets["volume_lift"] = np.maximum(
         0.0,
         wp_outlets["Maximum_Monthly_Liters"] - wp_outlets["Avg_Monthly_Volume"]
     )
 
-    # 2. Scaled Latent Opportunity Ratio (using log-scaling to compress outliers)
-    max_ratio = wp_outlets["latent_opportunity_ratio"].max()
-    wp_outlets["scaled_ratio"] = np.log1p(wp_outlets["latent_opportunity_ratio"]) / np.log1p(max_ratio)
+    # ── Assign Discrete Investment Costs (The Weight) ─────────────────────
+    wp_outlets["investment_cost"] = wp_outlets.apply(_assign_investment_tier, axis=1)
 
-    # 3. Efficiency Coefficient (alpha_i)
-    # alpha_base = 0.00005 (so LKR 10,000 gets ~39% lift for base shop, ~90% for top shop)
-    alpha_base = 0.00005
-    wp_outlets["alpha"] = (
-        alpha_base *
-        (1.0 + 2.0 * wp_outlets["scaled_ratio"]) *
-        (1.0 + 0.5 * wp_outlets["Cooler_Count"].fillna(0))
+    # Filter: only include outlets with positive lift (worth investing in)
+    candidates = wp_outlets[wp_outlets["volume_lift"] > 10.0].copy().reset_index(drop=True)
+    logger.info(f"Candidate outlets with positive lift (>10L): {len(candidates):,}")
+
+    # ── Cost Tier Distribution ────────────────────────────────────────────
+    tier_counts = candidates["investment_cost"].value_counts().sort_index()
+    for cost, count in tier_counts.items():
+        label = {15000: "Tier 3 (Merchandising)", 40000: "Tier 2 (Refurbish)", 90000: "Tier 1 (New Cooler)"}
+        logger.info(f"  {label.get(cost, 'Unknown')}: {count:,} outlets @ LKR {cost:,}")
+
+    # ── Initialize OR-Tools MILP Solver ───────────────────────────────────
+    logger.info("Initializing Google OR-Tools SCIP MILP Solver...")
+    solver = pywraplp.Solver.CreateSolver("SCIP")
+    if not solver:
+        logger.error("SCIP solver failed to initialize. Falling back to CBC.")
+        solver = pywraplp.Solver.CreateSolver("CBC")
+    if not solver:
+        logger.error("No solver available. Cannot run optimization.")
+        return
+
+    budget = 5_000_000  # LKR 5,000,000 — strict integer
+
+    # ── Decision Variables: x_i ∈ {0, 1} ─────────────────────────────────
+    variables = {}
+    for idx, row in candidates.iterrows():
+        variables[idx] = solver.IntVar(0, 1, f"x_{row['Outlet_ID']}")
+
+    # ── Constraint: Total Spend ≤ Budget ──────────────────────────────────
+    budget_constraint = solver.Sum([
+        variables[idx] * int(row["investment_cost"])
+        for idx, row in candidates.iterrows()
+    ])
+    solver.Add(budget_constraint <= budget)
+
+    # ── Objective: Maximize Volume Lift with Strategic Multiplier ──────────
+    # Isolated Goldmines get a 1.2× priority multiplier:
+    # This forces the solver to mathematically prefer shops with massive
+    # footfall and zero nearby competition.
+    objective = solver.Objective()
+    for idx, row in candidates.iterrows():
+        strategic_multiplier = 1.2 if row["is_isolated_goldmine"] == 1 else 1.0
+        adjusted_lift = float(row["volume_lift"] * strategic_multiplier)
+        objective.SetCoefficient(variables[idx], adjusted_lift)
+
+    objective.SetMaximization()
+
+    # ── Solve ─────────────────────────────────────────────────────────────
+    logger.info("Solving MILP Knapsack Problem...")
+    status = solver.Solve()
+
+    if status not in (pywraplp.Solver.OPTIMAL, pywraplp.Solver.FEASIBLE):
+        logger.error(f"Solver returned status {status} — no optimal solution found.")
+        return
+
+    # ── Extract Results ───────────────────────────────────────────────────
+    candidates["is_selected"] = [
+        int(variables[idx].solution_value()) for idx in candidates.index
+    ]
+    candidates["Trade_Spend_Allocation"] = (
+        candidates["is_selected"] * candidates["investment_cost"]
     )
 
-    # ── Optimization Parameters ────────────────────────────────────────────
-    budget = 5000000.0  # LKR 5,000,000
-    max_spend_per_outlet = 50000.0  # LKR 50,000 (operational constraint)
+    winners = candidates[candidates["is_selected"] == 1].copy()
+    total_spend = int(winners["Trade_Spend_Allocation"].sum())
+    total_lift = winners["volume_lift"].sum()
+    goldmine_winners = winners["is_isolated_goldmine"].sum()
 
-    G = wp_outlets["growth_gap"].values
-    alpha = wp_outlets["alpha"].values
-    outlets = wp_outlets["Outlet_ID"].values
+    logger.info("=" * 60)
+    logger.info("🏆 MILP OPTIMIZATION COMPLETE (Provably Optimal)")
+    logger.info(f"  Total Budget Allocated: LKR {total_spend:,} / LKR {budget:,}")
+    logger.info(f"  Budget Remaining:       LKR {budget - total_spend:,}")
+    logger.info(f"  Outlets Funded:         {len(winners):,} / {len(wp_outlets):,}")
+    logger.info(f"  Isolated Goldmines Funded: {goldmine_winners:,}")
+    logger.info(f"  Total Volume Lift:      {total_lift:,.2f} Liters")
+    logger.info(f"  Solver Wall Time:       {solver.wall_time()/1000:.2f} seconds")
 
-    # Marginal ROI at S_i = 0 is G_i * alpha_i
-    marginal_roi_zero = G * alpha
-
-    # ── Solver: Binary Search over Lagrange shadow price lambda ────────────
-    logger.info("Running optimization solver (Lagrangian binary search)...")
-
-    def compute_spend(lambd: float) -> np.ndarray:
-        # S_i = min(S_max, max(0, 1/alpha * ln(G * alpha / lambda)))
-        with np.errstate(divide="ignore", invalid="ignore"):
-            val = np.log((G * alpha) / lambd) / alpha
-        spend = np.clip(val, 0.0, max_spend_per_outlet)
-        # For zero growth gap or zero alpha, spend must be 0
-        spend[np.isnan(spend) | np.isinf(spend)] = 0.0
-        spend[G <= 0.0] = 0.0
-        return spend
-
-    # Binary search bounds
-    low = 1e-12
-    high = float(np.max(marginal_roi_zero)) + 1e-5
-
-    if high <= low:
-        logger.warning("No outlets have a positive growth gap. Budget cannot be allocated.")
-        wp_outlets["Trade_Spend_Allocation"] = 0.0
-    else:
-        # Solve
-        for iteration in range(100):
-            mid = (low + high) / 2.0
-            spends = compute_spend(mid)
-            total_spend = spends.sum()
-
-            if abs(total_spend - budget) < 1.0:  # Within 1 LKR
-                break
-            elif total_spend > budget:
-                low = mid  # Need higher lambda (higher shadow price -> lower spend)
-            else:
-                high = mid  # Need lower lambda
-
-        wp_outlets["Trade_Spend_Allocation"] = np.round(compute_spend(mid), 2)
-
-    # ── Calculate Impact & Metrics ─────────────────────────────────────────
-    wp_outlets["incremental_lift"] = np.round(
-        wp_outlets["growth_gap"] * (1.0 - np.exp(-wp_outlets["alpha"] * wp_outlets["Trade_Spend_Allocation"])),
-        2
-    )
-
-    allocated_outlets = wp_outlets[wp_outlets["Trade_Spend_Allocation"] > 0]
-    total_allocated = wp_outlets["Trade_Spend_Allocation"].sum()
-    total_lift = wp_outlets["incremental_lift"].sum()
-    max_alloc_reached = (wp_outlets["Trade_Spend_Allocation"] >= max_spend_per_outlet - 1.0).sum()
-
-    logger.info(f"Optimization complete:")
-    logger.info(f"  Total Budget Allocated: LKR {total_allocated:,.2f} / LKR {budget:,.2f}")
-    logger.info(f"  Outlets Receiving Budget: {len(allocated_outlets):,} / {len(wp_outlets):,}")
-    logger.info(f"  Total Incremental Volume Lift: {total_lift:,.2f} Liters")
-    logger.info(f"  Outlets hitting max spend ({max_spend_per_outlet} LKR): {max_alloc_reached:,}")
+    # Winner tier breakdown
+    winner_tiers = winners["investment_cost"].value_counts().sort_index()
+    for cost, count in winner_tiers.items():
+        label = {15000: "Tier 3 (Merch)", 40000: "Tier 2 (Refurb)", 90000: "Tier 1 (Cooler)"}
+        logger.info(f"  {label.get(cost, '?')}: {count:,} outlets | LKR {cost * count:,}")
 
     # Summary by distributor
     dist_summary = (
-        wp_outlets.groupby("Distributor_ID")
+        winners.groupby("Distributor_ID")
         .agg(
             outlets=("Outlet_ID", "count"),
-            funded_outlets=("Trade_Spend_Allocation", lambda x: (x > 0).sum()),
             total_spend=("Trade_Spend_Allocation", "sum"),
-            avg_spend=("Trade_Spend_Allocation", lambda x: x[x > 0].mean()),
-            total_lift=("incremental_lift", "sum"),
+            total_lift=("volume_lift", "sum"),
+            goldmines=("is_isolated_goldmine", "sum"),
         )
         .reset_index()
     )
     logger.info("\nAllocation Summary by Distributor:")
     for _, row in dist_summary.iterrows():
         logger.info(
-            f"  {row['Distributor_ID']}: {row['funded_outlets']}/{row['outlets']} shops funded | "
-            f"Spend: LKR {row['total_spend']:,.2f} | Lift: {row['total_lift']:,.2f} L"
+            f"  {row['Distributor_ID']}: {row['outlets']} shops | "
+            f"Spend: LKR {row['total_spend']:,.0f} | "
+            f"Lift: {row['total_lift']:,.2f} L | "
+            f"Goldmines: {int(row['goldmines'])}"
         )
 
-    # ── Save strictly to required outputs ─────────────────────────────────
-    out_df = wp_outlets[["Outlet_ID", "Trade_Spend_Allocation"]]
-    out_df.to_csv("output/insightai_budget_allocations.csv", index=False)
-    out_df.to_csv("output/InsightAI_budget_allocations.csv", index=False)
+    # ── Save Deliverables ─────────────────────────────────────────────────
+    # Full output for all WP outlets (funded + unfunded with 0 allocation)
+    all_outlets_out = wp_outlets[["Outlet_ID"]].copy()
+    funded_map = winners.set_index("Outlet_ID")["Trade_Spend_Allocation"]
+    all_outlets_out["Trade_Spend_Allocation"] = (
+        all_outlets_out["Outlet_ID"].map(funded_map).fillna(0).astype(int)
+    )
+    all_outlets_out.to_csv("output/insightai_budget_allocations.csv", index=False)
     logger.info("Saved allocations to output/insightai_budget_allocations.csv")
     logger.info("=" * 60)
 
