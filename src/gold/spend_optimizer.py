@@ -167,6 +167,17 @@ def run_spend_optimizer(config: dict | None = None) -> None:
             )
     logger.info(f"Geographic Distribution: Enforced {min_spend_per_distributor:,.0f} LKR minimum spend per distributor.")
 
+    # ── Constraint 1.6: Force Tier Diversity (Cooler Deployment) ───────────
+    # Prevent the knapsack from exclusively spamming Tier 3 packages (15k) due to low cost.
+    # Force the solver to deploy at least 10 new coolers (Tier 1) and 20 refurbishments (Tier 2).
+    t1_shops = candidates[candidates["investment_cost"] == 90000]
+    t2_shops = candidates[candidates["investment_cost"] == 40000]
+    if not t1_shops.empty:
+        solver.Add(solver.Sum([variables[idx] for idx, row in t1_shops.iterrows()]) >= 10)
+    if not t2_shops.empty:
+        solver.Add(solver.Sum([variables[idx] for idx, row in t2_shops.iterrows()]) >= 20)
+    logger.info("Tier Diversity: Enforced minimum deployment of 10 Tier-1 coolers and 20 Tier-2 refurbishments.")
+
     # ── Constraint 2: Spatial Anti-Cannibalization ────────────────────────
     # No two funded outlets within 500m of each other.
     # Prevents double-spending on the same catchment zone.

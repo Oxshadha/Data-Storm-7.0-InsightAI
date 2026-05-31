@@ -243,6 +243,14 @@ with st.sidebar.expander("🔧 Live Scenario Planning", expanded=False):
                 if not dist_shops.empty:
                     solver.Add(solver.Sum([variables[idx] * int(row["investment_cost"]) for idx, row in dist_shops.iterrows()]) >= min_spend)
             
+            # Force Tier Diversity
+            t1_shops = candidates[candidates["investment_cost"] == 90000]
+            t2_shops = candidates[candidates["investment_cost"] == 40000]
+            if not t1_shops.empty:
+                solver.Add(solver.Sum([variables[idx] for idx, row in t1_shops.iterrows()]) >= 10)
+            if not t2_shops.empty:
+                solver.Add(solver.Sum([variables[idx] for idx, row in t2_shops.iterrows()]) >= 20)
+            
             # Anti-cannibalization (simplified for UI speed - randomly exclude some if near)
             # In production, use cKDTree here as well
             
