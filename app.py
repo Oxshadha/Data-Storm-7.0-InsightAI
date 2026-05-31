@@ -572,7 +572,7 @@ if outlet_id in df["Outlet_ID"].values:
         fig_single_bar = go.Figure(go.Indicator(
             mode = "number+gauge+delta",
             value = outlet_row.get('Maximum_Monthly_Liters', 0.0),
-            domain = {'x': [0.1, 1], 'y': [0, 1]},
+            domain = {'x': [0.2, 1], 'y': [0, 1]},
             title = {'text': "<b>Volume</b><br><span style='color: gray; font-size:0.8em'>Liters</span>"},
             delta = {'reference': outlet_row.get('Avg_Monthly_Volume', 0.0), 'position': "top"},
             gauge = {
@@ -584,13 +584,31 @@ if outlet_id in df["Outlet_ID"].values:
                     'value': outlet_row.get('Maximum_Monthly_Liters', 0.0)
                 },
                 'steps': [
-                    {'range': [0, outlet_row.get('Avg_Monthly_Volume', 0.0)], 'color': "#475569"}
+                    {'range': [0, outlet_row.get('Avg_Monthly_Volume', 0.0)], 'color': "#475569", 'name': "Historical"}
                 ],
                 'bar': {'color': "#22d3ee"}
             }
         ))
-        fig_single_bar.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", height=250)
+        fig_single_bar.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", 
+            plot_bgcolor="rgba(0,0,0,0)", 
+            font_color="#e2e8f0", 
+            height=180,
+            margin=dict(l=150, r=50, t=30, b=30) 
+        )
+        
         st.plotly_chart(fig_single_bar, use_container_width=True)
+        
+        # Clean HTML Legend below the chart
+        st.markdown(
+            """
+            <div style='text-align: center; font-size: 13px; color: #94a3b8; margin-top: -10px; margin-bottom: 20px;'>
+                <span style='color: #475569; font-size: 16px;'>■</span> Historical Average &nbsp;&nbsp;&nbsp;&nbsp; 
+                <span style='color: #22d3ee; font-size: 16px;'>■</span> Predicted True Potential
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
 
     with det2:
         # Build Context Object
