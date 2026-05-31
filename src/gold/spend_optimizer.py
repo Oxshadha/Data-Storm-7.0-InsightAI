@@ -162,8 +162,13 @@ def run_spend_optimizer(config: dict | None = None) -> None:
     coords_df = read_parquet(
         config["paths"]["silver"]["root"] + "/outlet_coordinates_clean.parquet"
     )
-    candidates_with_coords = candidates.merge(coords_df, on="Outlet_ID", how="left")
+    # Merge coords to wp_outlets so we have all neighbors for Huff Model
+    wp_outlets = wp_outlets.merge(coords_df[["Outlet_ID", "Latitude", "Longitude"]], on="Outlet_ID", how="left")
+    
+    candidates_with_coords = candidates.merge(coords_df[["Outlet_ID", "Latitude", "Longitude"]], on="Outlet_ID", how="left")
     has_coords = candidates_with_coords["Latitude"].notna()
+    
+    huff_multipliers = {idx: 1.0 for idx in candidates.index}
 
     if has_coords.sum() > 0:
         geo_subset = candidates_with_coords[has_coords]
@@ -191,16 +196,62 @@ def run_spend_optimizer(config: dict | None = None) -> None:
             f"Anti-cannibalization: {n_conflicts:,} pairwise exclusion constraints "
             f"(no two funded outlets within {exclusion_radius_m}m)"
         )
+        
+        # ── Enterprise Feature: Huff Gravity Model ────────────────────────────
+        logger.info("Computing Enterprise Huff Gravity Model dominance scores...")
+        wp_has_coords = wp_outlets["Latitude"].notna()
+        wp_geo = wp_outlets[wp_has_coords].copy()
+        gdf_all = gpd.GeoDataFrame(
+            wp_geo,
+            geometry=gpd.points_from_xy(wp_geo["Longitude"], wp_geo["Latitude"]),
+            crs="EPSG:4326",
+        ).to_crs(epsg=5234)
+        
+        xy_all = np.column_stack([gdf_all.geometry.x.values, gdf_all.geometry.y.values])
+        tree_all = cKDTree(xy_all)
+        attractiveness = gdf_all["Maximum_Monthly_Liters"].values + 1.0
+        
+        cand_geo = candidates_with_coords[has_coords].copy()
+        cand_gdf = gpd.GeoDataFrame(
+            cand_geo,
+            geometry=gpd.points_from_xy(cand_geo["Longitude"], cand_geo["Latitude"]),
+            crs="EPSG:4326"
+        ).to_crs(epsg=5234)
+        
+        cand_geoms = cand_gdf.geometry.values
+        cand_indices = cand_geo.index.tolist()
+        
+        for k, pt in enumerate(cand_geoms):
+            idx = cand_indices[k]
+            row = candidates.iloc[idx]
+            
+            # Find all competitors within 2km walking/driving catchment
+            neighbors = tree_all.query_ball_point([pt.x, pt.y], r=2000)
+            
+            numerator = row["volume_lift"] + 1.0
+            denominator = 0.0
+            
+            for n_idx in neighbors:
+                dist = np.sqrt((pt.x - xy_all[n_idx][0])**2 + (pt.y - xy_all[n_idx][1])**2)
+                dist = max(dist, 50.0) # 50m minimum distance to avoid infinite gravity
+                denominator += attractiveness[n_idx] / (dist**2)
+                
+            own_gravity = numerator / (50.0**2)
+            huff_prob = own_gravity / denominator if denominator > 0 else 1.0
+            
+            # Boost the multiplier based on how dominant they are in their catchment
+            huff_multipliers[idx] = 1.0 + huff_prob
+
     else:
         logger.warning("No coordinates available — skipping spatial exclusion constraints.")
 
     # ── Objective: Maximize Volume Lift with Strategic Multiplier ──────────
-    # Isolated Goldmines get a 1.2× priority multiplier:
-    # This forces the solver to mathematically prefer shops with massive
-    # footfall and zero nearby competition.
+    # Isolated Goldmines get a 1.2× priority multiplier.
+    # We now also multiply by the Huff Gravity Dominance multiplier.
     objective = solver.Objective()
     for idx, row in candidates.iterrows():
-        strategic_multiplier = 1.2 if row["is_isolated_goldmine"] == 1 else 1.0
+        base_mult = 1.2 if row["is_isolated_goldmine"] == 1 else 1.0
+        strategic_multiplier = base_mult * huff_multipliers[idx]
         adjusted_lift = float(row["volume_lift"] * strategic_multiplier)
         objective.SetCoefficient(variables[idx], adjusted_lift)
 
