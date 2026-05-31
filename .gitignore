@@ -11,9 +11,11 @@ data/bronze/**/*.csv
 # ── Generated Data (reproduce via pipeline) ──
 data/bronze/*.parquet
 data/silver/*.parquet
+!data/silver/outlet_coordinates_clean.parquet
 data/silver/rejected/*.parquet
 data/silver/rejected/rejection_manifest.csv
 data/gold/*.parquet
+!data/gold/model_input.parquet
 data/bronze/poi_raw/*.parquet
 
 # ── Logs ──
