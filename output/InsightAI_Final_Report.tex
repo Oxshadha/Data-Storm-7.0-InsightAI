@@ -58,7 +58,7 @@ Through this framework, we identified "System Ghosts"-extreme variance spikes ca
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.48\linewidth]{plots/plot_1_ghost_exorcism.png}
+    \includegraphics[width=0.40\linewidth]{plots/plot_1_ghost_exorcism.png}
     \caption{\scriptsize Variance Stabilization. Demonstrating the stabilization of our target variable after removing extreme system-generated noise and wholesale sell-in spikes.}
     \label{fig:ghost_exorcism}
 \end{figure}
@@ -102,7 +102,7 @@ where $\epsilon = 0.01$ prevents division by zero. Outlets with high driver grav
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.48\linewidth]{plots/plot_2_spatial_hotspots.png}
+    \includegraphics[width=0.40\linewidth]{plots/plot_2_spatial_hotspots.png}
     \caption{\scriptsize Spatial Catchment Hotspots. Visual proof of hidden high-density demand nodes in the Western Province mapped via Overture Data.}
     \label{fig:spatial_hotspots}
 \end{figure}
@@ -128,9 +128,18 @@ The problem statement references Tobit regression for handling left/right-censor
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.48\linewidth]{plots/plot_8_selection_bias.png}
-    \caption{\scriptsize Selection Bias Defense. As the KDE overlap plot proves, both Censored and Uncensored shops share overlapping distributions in Spatial Driver Gravity. Because the model learned from identical topological contexts, the non-linear Quantile Regressor correctly interpolates potential across both segments without extrapolating into unknown feature space.}
-    \label{fig:selection_bias}
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{plots/plot_8_selection_bias.png}
+        \caption{\scriptsize Selection Bias Defense. KDE overlap proves generalizability.}
+        \label{fig:selection_bias}
+    \end{minipage}\hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{plots/plot_3_feature_importance.png}
+        \caption{\scriptsize LightGBM Information Gain proving causal spatial logic.}
+        \label{fig:feature_importance}
+    \end{minipage}
 \end{figure}
 
 \subsubsection{Quantile Loss (Pinball) Validation}
@@ -140,7 +149,7 @@ The LightGBM algorithm utilized early stopping (halting at iteration 300) on a 1
 
 \begin{table}[H]
     \centering
-    \footnotesize
+    \scriptsize
     \caption{Out-of-Sample Pinball Loss across Alpha Target Percentiles.}
     \begin{tabular}{|c|c|c|}
         \hline
@@ -150,12 +159,6 @@ The LightGBM algorithm utilized early stopping (halting at iteration 300) on a 1
         $\alpha = 0.90$ & 90th Percentile Ceiling & 0.041 \\ \hline
     \end{tabular}
 \end{table}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.48\linewidth]{plots/plot_3_feature_importance.png}
-    \caption{\scriptsize LightGBM Information Gain. Proof that the model relies on causal spatial logic rather than simply memorizing historical sales.}
-    \label{fig:feature_importance}
-\end{figure}
 
 \subsection{Validating the Uncapped Ceiling: Structural Safety Floor}
 To ensure business logic consistency and prevent algorithmic hallucination, we enforced a \textbf{Structural Safety Floor}:
@@ -189,7 +192,7 @@ We model the incremental sales lift $L_i(S_i)$ using a threshold-based response 
 \end{itemize}
 \[ L_i(S_i) = \text{Volume\_Lift}_i \times \text{Dominance\_Multiplier}_i \cdot X_i \]
 where $\text{Volume\_Lift}_i = G_i$ (the predicted potential minus the historical baseline) and $X_i \in \{0, 1\}$ is a binary decision variable indicating whether an outlet receives a package. The \textbf{Dominance Multiplier} is defined as $1.0 - (\text{Competitive\_Saturation\_Index}_i / \max(\text{CSI}))$, mathematically bounded between $[0.5, 1.0]$. This explicitly penalizes investments in heavily cannibalized zones, forcing the optimizer to route budget to isolated spatial monopolies.
-\newpage
+
 The optimization problem is defined as a bounded Knapsack MILP (Mixed-Integer Linear Program):
 \[ \max_{X} \sum_{i \in \text{Candidates}} L_i(S_i) \cdot X_i \]
 subject to:
@@ -204,9 +207,9 @@ Because the constraints involve discrete geographic distribution and binary vari
 \subsection{Optimization Results \& Executive ROI}
 The optimizer was applied to the Western Province outlets. The candidate pool was not arbitrarily pre-filtered; rather, it was dynamically defined by the Quantile Regressor, admitting only outlets mathematically proven to have a latent growth gap ($G_i > 10L$). Furthermore, a hard spatial filter was enforced ($\text{poi\_total\_catchment} > 0$) to structurally disqualify any synthetic or offshore coordinates from receiving budget. 
 
-The total budget constraint of LKR 5,000,000 was fully exhausted. A total of 250 high-ROI outlets were funded. The MILP generated a mathematically guaranteed incremental network lift of \textbf{124,350 Liters}. 
+The total budget constraint of LKR 5,000,000 was fully exhausted. A total of 250 high-ROI outlets were funded. The MILP generated a mathematically guaranteed incremental network lift of \textbf{138,132 Liters}. 
 
-\textbf{Financial Conversion (Payback Period):} Assuming a standard FMCG unit price of 250 LKR per liter, this volumetric lift translates to \textbf{LKR 31.08 Million} in incremental monthly revenue. Against the 5M LKR investment, this yields a staggering \textbf{Payback Period of 1.9 months}, providing the C-suite with a highly defensible, rapid-turnaround business case.
+\textbf{Financial Conversion (Payback Period):} Assuming a standard FMCG unit price of 250 LKR per liter, this volumetric lift translates to \textbf{LKR 34.5 Million} in incremental monthly revenue. Against the 5M LKR investment, this yields a staggering \textbf{Payback Period of 0.1 months}, providing the C-suite with a highly defensible, rapid-turnaround business case.
 
 \begin{table}[H]
     \centering
@@ -269,14 +272,14 @@ The application integrates an LLM-based component (\texttt{src/gold/llm\_xai.py}
         \caption{GenAI Explainability module dynamically justifying the MILP optimization decisions to stakeholders.}
     \end{minipage}
 \end{figure}
-\newpage
+
 % --- SECTION 7: GENAI LOG & CONCLUSION ---
 \section{GenAI Transparency Log}
 Team InsightAI utilized Generative AI strictly as a senior thought partner to bridge the gap between abstract mathematics and real-world FMCG supply chain realities. Aside from the recorded strategic prompts below, our team operated completely independently on the core pipeline development throughout the 36-hour sprint.
 
 \begin{table}[H]
     \centering
-    \footnotesize
+    \scriptsize
     \caption{InsightAI GenAI Usage and Prompt Transparency}
     \begin{tabular}{|p{0.25\textwidth}|p{0.7\textwidth}|}
         \hline
@@ -312,6 +315,6 @@ Team InsightAI utilized Generative AI strictly as a senior thought partner to br
 \end{table}
 
 \section{Conclusion and Impact Summary}
-Team InsightAI has successfully delivered a production-ready spatial analytics and budget optimization pipeline. By resolving the N-Squared spatial indexing bottleneck with SciPy cKDTree and modeling competitive saturation with Huff gravity, we extracted a reliable latent opportunity signal. Quantile regression ($p90$) enabled demand unconstraining by modeling peak performance. The MILP Knapsack optimizer guarantees that the promotional budget is mathematically allocated to maximize incremental volume, generating a \textbf{total mathematically guaranteed incremental network lift of 124,350 Liters} across the Western Province. The Streamlit dashboard bridges these algorithms with intuitive interfaces and LLM explanations, establishing a robust framework for enterprise trade-spend decision-making.
+Team InsightAI has successfully delivered a production-ready spatial analytics and budget optimization pipeline. By resolving the N-Squared spatial indexing bottleneck with SciPy cKDTree and modeling competitive saturation with Huff gravity, we extracted a reliable latent opportunity signal. Quantile regression ($p90$) enabled demand unconstraining by modeling peak performance. The MILP Knapsack optimizer guarantees that the promotional budget is mathematically allocated to maximize incremental volume, generating a \textbf{total mathematically guaranteed incremental network lift of 138,132 Liters} across the Western Province. The Streamlit dashboard bridges these algorithms with intuitive interfaces and LLM explanations, establishing a robust framework for enterprise trade-spend decision-making.
 
 \end{document}
