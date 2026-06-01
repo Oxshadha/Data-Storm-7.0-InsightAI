@@ -352,7 +352,7 @@ def run_spend_optimizer(config: dict | None = None) -> None:
     # Full output for all WP outlets (funded + unfunded with 0 allocation)
     all_outlets_out = wp_outlets[["Outlet_ID"]].copy()
     funded_map = winners.set_index("Outlet_ID")["Trade_Spend_Allocation"]
-    all_outlets_out["Trade_Spend_Allocation"] = (
+    all_outlets_out["Trade Spend Allocation (LKR)"] = (
         all_outlets_out["Outlet_ID"].map(funded_map).fillna(0).astype(int)
     )
     all_outlets_out.to_csv("output/insightai_budget_allocations.csv", index=False)
