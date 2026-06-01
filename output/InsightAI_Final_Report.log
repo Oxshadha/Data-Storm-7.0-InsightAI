@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  1 JUN 2026 22:48
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  1 JUN 2026 22:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -468,79 +468,87 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 
 [4 <output/plots/plot_2_spatial_hotspots.png> <output/plots/plot_5_elbow_method
 .png>]
-<plots/plot_3_feature_importance.png, id=141, 722.7pt x 433.62pt>
+<plots/plot_8_selection_bias.png, id=141, 578.16pt x 361.35pt>
+File: plots/plot_8_selection_bias.png Graphic file (type png)
+<use plots/plot_8_selection_bias.png>
+Package pdftex.def Info: plots/plot_8_selection_bias.png  used on input line 13
+1.
+(pdftex.def)             Requested size: 231.29816pt x 144.5595pt.
+<plots/plot_3_feature_importance.png, id=142, 722.7pt x 433.62pt>
 File: plots/plot_3_feature_importance.png Graphic file (type png)
 <use plots/plot_3_feature_importance.png>
 Package pdftex.def Info: plots/plot_3_feature_importance.png  used on input lin
-e 148.
+e 155.
 (pdftex.def)             Requested size: 231.29816pt x 138.77446pt.
-<plots/plot_4_scatter_unconstrained.png, id=142, 578.16pt x 433.62pt>
+
+
+[5 <output/plots/plot_8_selection_bias.png> <output/plots/plot_3_feature_import
+ance.png>]
+<plots/plot_4_scatter_unconstrained.png, id=155, 578.16pt x 433.62pt>
 File: plots/plot_4_scatter_unconstrained.png Graphic file (type png)
 <use plots/plot_4_scatter_unconstrained.png>
 Package pdftex.def Info: plots/plot_4_scatter_unconstrained.png  used on input 
-line 160.
+line 167.
 (pdftex.def)             Requested size: 231.29816pt x 173.47139pt.
 
 
-[5 <output/plots/plot_3_feature_importance.png>]
-
 [6 <output/plots/plot_4_scatter_unconstrained.png>]
-<plots/plot_6_budget_allocation.png, id=160, 650.43pt x 361.35pt>
+
+[7]
+<plots/plot_6_budget_allocation.png, id=167, 650.43pt x 361.35pt>
 File: plots/plot_6_budget_allocation.png Graphic file (type png)
 <use plots/plot_6_budget_allocation.png>
 Package pdftex.def Info: plots/plot_6_budget_allocation.png  used on input line
- 223.
+ 230.
 (pdftex.def)             Requested size: 231.29816pt x 128.49794pt.
-<plots/plot_7_roi_yield.png, id=161, 650.43pt x 361.35pt>
+<plots/plot_7_roi_yield.png, id=168, 650.43pt x 361.35pt>
 File: plots/plot_7_roi_yield.png Graphic file (type png)
 <use plots/plot_7_roi_yield.png>
-Package pdftex.def Info: plots/plot_7_roi_yield.png  used on input line 228.
+Package pdftex.def Info: plots/plot_7_roi_yield.png  used on input line 235.
 (pdftex.def)             Requested size: 231.29816pt x 128.49794pt.
 
 
-[7]
-<plots/dashboard_kpi.png, id=167, 1439.3775pt x 745.78625pt>
+[8]
+<plots/dashboard_kpi.png, id=175, 1439.3775pt x 745.78625pt>
 File: plots/dashboard_kpi.png Graphic file (type png)
 <use plots/dashboard_kpi.png>
-Package pdftex.def Info: plots/dashboard_kpi.png  used on input line 256.
+Package pdftex.def Info: plots/dashboard_kpi.png  used on input line 263.
 (pdftex.def)             Requested size: 231.29816pt x 119.84032pt.
-<plots/dashboard_xai.png, id=168, 1270.7475pt x 792.9625pt>
+<plots/dashboard_xai.png, id=176, 1270.7475pt x 792.9625pt>
 File: plots/dashboard_xai.png Graphic file (type png)
 <use plots/dashboard_xai.png>
-Package pdftex.def Info: plots/dashboard_xai.png  used on input line 261.
+Package pdftex.def Info: plots/dashboard_xai.png  used on input line 268.
 (pdftex.def)             Requested size: 231.29816pt x 144.32423pt.
 
 
-[8 <output/plots/plot_6_budget_allocation.png> <output/plots/plot_7_roi_yield.p
+[9 <output/plots/plot_6_budget_allocation.png> <output/plots/plot_7_roi_yield.p
 ng>]
 
-[9 <output/plots/dashboard_kpi.png> <output/plots/dashboard_xai.png>]
-Underfull \hbox (badness 2486) in paragraph at lines 301--301
+[10 <output/plots/dashboard_kpi.png> <output/plots/dashboard_xai.png>]
+Underfull \hbox (badness 2486) in paragraph at lines 308--308
 []\OT1/cmr/bx/n/8 7. Busi-ness Con-straints
  []
 
 
 
-[10] (output/InsightAI_Final_Report.aux)
+[11] (output/InsightAI_Final_Report.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
 
 
-Package rerunfilecheck Warning: File `InsightAI_Final_Report.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
 
-Package rerunfilecheck Info: Checksums for `InsightAI_Final_Report.out':
-(rerunfilecheck)             Before: C28FF09A3C1741C22B8A160B8653D13D;6826
-(rerunfilecheck)             After:  8DC3AF19969397DDD38D30A72CD7A394;6918.
+Package rerunfilecheck Info: File `InsightAI_Final_Report.out' has not changed.
+
+(rerunfilecheck)             Checksum: 8DC3AF19969397DDD38D30A72CD7A394;6918.
  ) 
 Here is how much of TeX's memory you used:
- 10349 strings out of 474662
- 162922 string characters out of 5751109
+ 10359 strings out of 474662
+ 163223 string characters out of 5751109
  575092 words of memory out of 5000000
- 33225 multiletter control sequences out of 15000+600000
+ 33233 multiletter control sequences out of 15000+600000
  566472 words of font info for 63 fonts, out of 8000000 for 9000
  319 hyphenation exceptions out of 8191
  75i,13n,79p,1280b,485s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -565,10 +573,10 @@ cal/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></us
 r/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
 </usr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.p
 fb>
-Output written on output/InsightAI_Final_Report.pdf (11 pages, 4612525 bytes).
+Output written on output/InsightAI_Final_Report.pdf (12 pages, 4731882 bytes).
 PDF statistics:
- 286 PDF objects out of 1000 (max. 8388607)
- 215 compressed objects within 3 object streams
- 47 named destinations out of 1000 (max. 500000)
- 230 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 294 PDF objects out of 1000 (max. 8388607)
+ 220 compressed objects within 3 object streams
+ 49 named destinations out of 1000 (max. 500000)
+ 235 words of extra memory for PDF output out of 10000 (max. 10000000)
 

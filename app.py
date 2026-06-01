@@ -617,18 +617,6 @@ with tab2:
         with st.expander(":material/science: Data Science Note: Identifying Censored Demand"):
             st.write("**Overcoming Historical Quotas:** The rigid vertical alignments on the X-axis represent historical supply-side censoring (e.g., strict distributor quotas capping sales at exactly 600L). By utilizing spatial interaction features, the Quantile Regressor successfully maps the *true* underlying demand (Y-axis), transforming constrained step-functions into a continuous natural distribution.")
             
-        
-        # KDE Selection Bias Defense Plot
-        st.markdown("### Selection Bias Defense (Censored vs Uncensored)")
-        if os.path.exists("output/plots/plot_8_selection_bias.png"):
-            st.image("output/plots/plot_8_selection_bias.png", use_container_width=True)
-        else:
-            st.warning("Selection Bias plot not found.")
-            
-        with st.expander(":material/policy: Defense Note: Overcoming Urban Bias"):
-            st.write("**The Question:** If the model was trained strictly on Uncensored shops, how can we be sure it generalizes to Censored shops without carrying an urban bias?")
-            st.write("**The Proof:** As the KDE overlap plot proves, both Censored and Uncensored shops share overlapping distributions in Spatial Driver Gravity. Because the model learned from identical topological contexts, the non-linear Quantile Regressor correctly interpolates potential across both segments without extrapolating into unknown feature space.")
-        
         # Competitive Saturation
         st.markdown("### Density Distribution (Saturated Zones Only)")
         sat_df = filtered_df[filtered_df["competitive_saturation_index"] > 0]
