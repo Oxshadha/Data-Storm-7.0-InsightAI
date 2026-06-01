@@ -1,7 +1,9 @@
 \documentclass[10pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{geometry}
-\geometry{margin=0.7in}
+\geometry{margin=0.8in}
+\usepackage{setspace}
+\setstretch{1.1}
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{hyperref}
@@ -52,7 +54,7 @@ To ensure the integrity of our pipeline, we built a comprehensive \textbf{Data Q
     \item \textbf{DQ\_002 (Negative Returns Correction):} Adjusting net monthly sales where return volumes exceeded gross sales due to delayed logistics logging.
     \item \textbf{DQ\_003 (Referential Integrity):} Resolving discrepancies between transactional records and the outlet master database.
 \end{itemize}
-Through this framework, we identified "System Ghosts"—extreme variance spikes caused by data upload failures or negative return adjustments that dropped net monthly sales to exactly zero. If left untreated, machine learning models naively learn these "logistical zeros" as "zero consumer demand." These records were quarantined and replaced with 24-month rolling medians. To rigorously define "Censored Demand" (outlets hitting a hard supply quota), we required two explicit statistical proofs: \textbf{1) Unnaturally Low Variance ($\text{CV} < 0.15$)} over 24 months, indicating a flatlined ceiling, and \textbf{2) High Spatial Demand ($\text{Gravity Score} > 0.5$)}. We performed a sensitivity analysis across CV thresholds $\in [0.10, 0.15, 0.20]$ and determined that $0.15$ optimally captured the 95th percentile of known quota-bound urban shops without generating false positives among organically low-volume rural outlets. If an outlet has massive geographic footfall but zero volume variance, we confidently label it as supply-censored.
+Through this framework, we identified "System Ghosts"-extreme variance spikes caused by data upload failures or negative return adjustments that dropped net monthly sales to exactly zero. If left untreated, machine learning models naively learn these "logistical zeros" as "zero consumer demand." These records were quarantined and replaced with 24-month rolling medians. To rigorously define "Censored Demand" (outlets hitting a hard supply quota), we required two explicit statistical proofs: \textbf{1) Unnaturally Low Variance ($\text{CV} < 0.15$)} over 24 months, indicating a flatlined ceiling, and \textbf{2) High Spatial Demand ($\text{Gravity Score} > 0.5$)}. We performed a sensitivity analysis across CV thresholds $\in [0.10, 0.15, 0.20]$ and determined that $0.15$ optimally captured the 95th percentile of known quota-bound urban shops without generating false positives among organically low-volume rural outlets. If an outlet has massive geographic footfall but zero volume variance, we confidently label it as supply-censored.
 
 \begin{figure}[H]
     \centering
@@ -163,7 +165,7 @@ We model the incremental sales lift $L_i(S_i)$ using a threshold-based response 
 \end{itemize}
 \[ L_i(S_i) = \text{Volume\_Lift}_i \times \text{Dominance\_Multiplier}_i \cdot X_i \]
 where $\text{Volume\_Lift}_i = G_i$ (the predicted potential minus the historical baseline) and $X_i \in \{0, 1\}$ is a binary decision variable indicating whether an outlet receives a package. The \textbf{Dominance Multiplier} is defined as $1.0 - (\text{Competitive\_Saturation\_Index}_i / \max(\text{CSI}))$, mathematically bounded between $[0.5, 1.0]$. This explicitly penalizes investments in heavily cannibalized zones, forcing the optimizer to route budget to isolated spatial monopolies.
-
+\newpage
 The optimization problem is defined as a bounded Knapsack MILP (Mixed-Integer Linear Program):
 \[ \max_{X} \sum_{i \in \text{Candidates}} L_i(S_i) \cdot X_i \]
 subject to:
@@ -239,7 +241,7 @@ The application integrates an LLM-based component (\texttt{src/gold/llm\_xai.py}
         \caption{GenAI Explainability module dynamically justifying the MILP optimization decisions to stakeholders.}
     \end{minipage}
 \end{figure}
-
+\newpage
 % --- SECTION 7: GENAI LOG & CONCLUSION ---
 \section{GenAI Transparency Log}
 Team InsightAI utilized Generative AI strictly as a senior thought partner to bridge the gap between abstract mathematics and real-world FMCG supply chain realities. Aside from the recorded strategic prompts below, our team operated completely independently on the core pipeline development throughout the 36-hour sprint.
@@ -248,14 +250,36 @@ Team InsightAI utilized Generative AI strictly as a senior thought partner to br
     \centering
     \footnotesize
     \caption{InsightAI GenAI Usage and Prompt Transparency}
-    \begin{tabular}{|p{0.2\textwidth}|p{0.75\textwidth}|}
+    \begin{tabular}{|p{0.25\textwidth}|p{0.7\textwidth}|}
         \hline
-        \textbf{Workflow Stage} & \textbf{Human-AI Collaboration Prompts} \\ \hline
-        \textbf{1. Spatial Gravity \& Cannibalization} & \textbf{Human Prompt:} "The current spatial model ignores competitive saturation. If a shop has high footfall but is surrounded by competitors, marketing ROI will plummet due to cannibalization. Implement Huff's Model of Retail Gravitation to explicitly penalize dense competitive clusters and route budget to isolated provincial monopolies." \newline \textbf{AI Impact:} AI translated the user's conceptual requirement into the SciPy cKDTree vectorized implementation of Huff's Model, calculating the Competitive Saturation Index. \\ \hline
-        \textbf{2. Optimization Strategy (MILP)} & \textbf{Human Prompt:} "The Lagrangian shadow price approach is too theoretical for FMCG deployments. We need to shift to a Mixed-Integer Linear Programming (MILP) Knapsack formulation. Lock the decision variables to exact corporate trade packages (90K Coolers, 40K Refurbishments, 15K Merchandising) so the output is immediately actionable." \newline \textbf{AI Impact:} Directed by the user, the AI discarded the theoretical multiplier approach and built a strict MILP Knapsack solver using Google OR-Tools to map to the user's exact physical trade packages. \\ \hline
-        \textbf{3. Real-World Business Logic} & \textbf{Human Prompt:} "We must align the mathematical assignments with physical constraints. A high-potential shop without a cooler cannot physically hold more volume, so the optimizer MUST force the 90K Cooler package there. Conversely, saturated urban hubs should only receive the 15K POSM discounts. Update the constraint matrices." \newline \textbf{AI Impact:} AI implemented the dynamic hardware tiering constraints, ensuring the 90K cooler budgets were mathematically locked only to high-potential outlets lacking physical cooling infrastructure. \\ \hline
-        \textbf{4. Data Integrity Verification} & \textbf{Human Prompt:} "The optimizer is failing to exhaust the 5M LKR budget. There is a systemic leak in the pipeline. Audit the geographic filtering sequence—I suspect the province filter is being applied before historical distributor migrations are resolved, causing ghost allocations." \newline \textbf{AI Impact:} The user's QA identified a geographic leakage bug. The AI was directed to refine the sequence to ensure spatial filtering occurred on the terminal state of the outlet, preventing allocations to relocated shops. \\ \hline
-        \textbf{5. Explainable AI (XAI)} & \textbf{Human Prompt:} "Stakeholders won't trust raw probability matrices. Build a GenAI translation layer that ingests the [latent potential, historical volume, cooler status, and spatial gravity] metrics and outputs exactly 3 bullet points explaining the strategic rationale behind why this specific outlet received funding." \newline \textbf{AI Impact:} Generated the system prompt for the \texttt{llm\_xai.py} dashboard engine. \\ \hline
+        \textbf{Workflow Stage} & \textbf{Raw Human Prompts \& AI Implementation Impact} \\ \hline
+        \textbf{1. Spatial Gravity \& Cannibalization} & 
+        \textbf{Human Prompt:} "we need to add canibilzation penalty no,,,if there are too many shops nearby the ROI will drop... implement that Hufflepuff gravity model or something similar so we dont fund saturated clusters" \newline 
+        \textbf{AI Impact:} Interpreted the user's reference to "Hufflepuff" as Huff's Model of Retail Gravitation. Implemented a vectorized SciPy cKDTree to calculate a Competitive Saturation Index, actively penalizing clustered outlets to prevent budget cannibalization. \\ \hline
+        
+        \textbf{2. MILP Optimization \& Trade Packages} & 
+        \textbf{Human Prompt:} "Why we cannot use another thing than lagrangian \... we can use knapsack algorithms no... we change constraints to have 90k and 40k marketing also... and our marketing approach 90k coolers, 15k merch." \newline 
+        \textbf{AI Impact:} Discarded the theoretical Lagrangian multiplier approach. Built a strict MILP Knapsack solver in \texttt{spend\_optimizer.py} constrained to the user's explicit physical trade packages (90K Coolers, 40K Refurbishments, 15K POSM). \\ \hline
+        
+        \textbf{3. Spatial Anomaly Detection} & 
+        \textbf{Human Prompt:} "you say thet they give sythetic coordinates thats why outlets in the sea other than ground,,,so is they are sythetic how thy becaome funded,,,to funded them they need high traffic... so this mean we are really dumb" \newline 
+        \textbf{AI Impact:} The user identified a critical spatial anomaly (the "Coastal Edge Effect"). Investigated the mathematical logic and confirmed that despite zero spatial footfall, the MILP correctly funded these offshore shops due to the user-defined \texttt{Historical Max Volume} safety floor and a perfect Dominance Multiplier. \\ \hline
+        
+        \textbf{4. XAI Output Formatting} & 
+        \textbf{Human Prompt:} "there is genarte is long things,,i think if thsi can be narrative but pointwise on there asking format would be perfect... the confidence level ui should be like this color like before" \newline 
+        \textbf{AI Impact:} Redesigned the \texttt{llm\_xai.py} prompt schema to output exactly three concise bullet points mirroring the rubric, and separated the "Decision Confidence \& Risk Assessment" block so the Streamlit dashboard could render it securely as a highlighted info alert. \\ \hline
+        
+        \textbf{5. Dashboard UI Debugging} & 
+        \textbf{Human Prompt:} "in dashboard this chart is left side cropped in my friend laptop,,but my one is oay,,so we nee dto fix those ui bugs load needed any device with clean alignments?what is the issue" \newline 
+        \textbf{AI Impact:} Debugged Plotly rendering constraints in \texttt{app.py}. Adjusted the radial chart margins (\texttt{margin=dict(l=90, r=90, t=50, b=50)}) to ensure cross-device responsive alignment. \\ \hline
+
+        \textbf{6. Mathematical Modeling (Quantile Regression)} & 
+        \textbf{Human Prompt:} "can we use p90 qunatile regresion to find the censored demand beacuse it will predict the peak value not the median one,,is this mathamtically sound for this right censored problem" \newline 
+        \textbf{AI Impact:} Validated the statistical rigor of using a LightGBM Quantile Regressor ($\alpha=0.90$) with Pinball Loss to estimate the unconstrained ceiling of demand for outlets historically capped by supply quotas. \\ \hline
+        
+        \textbf{7. Business Constraints (Safety Floor)} & 
+        \textbf{Human Prompt:} "we need to add structrul safty floor,,,the max of historical or p90 beacsue somtimes model can predict lower than what they alrdy selling" \newline 
+        \textbf{AI Impact:} Implemented a \texttt{Structural Safety Floor} algorithm to ensure that predicted potential mathematically cannot drop below an outlet's empirically proven historical maximum volume. \\ \hline
     \end{tabular}
 \end{table}
 

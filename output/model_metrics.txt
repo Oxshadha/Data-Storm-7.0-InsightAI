@@ -1,0 +1,29 @@
+2026-06-01 20:50:55,935 | model.lgbm_quantile  | INFO     | ============================================================
+2026-06-01 20:50:55,935 | model.lgbm_quantile  | INFO     | Modeling: Running LightGBM Quantile Regressor
+2026-06-01 20:50:55,935 | model.lgbm_quantile  | INFO     | Loading ABT and Master Data...
+2026-06-01 20:50:55,936 | utils.io             | INFO     | Reading Parquet: model_input.parquet
+2026-06-01 20:50:56,296 | utils.io             | INFO     |   → 450,633 rows × 130 columns
+/Users/k.e.oshada/Documents/Data-Storm-7.0-InsightAI/src/model/lgbm_quantile.py:48: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  outlet_static = abt.sort_values(["Year", "Month"]).groupby("Outlet_ID").tail(1).reset_index(drop=True)
+2026-06-01 20:50:56,660 | model.lgbm_quantile  | INFO     | Preparing Training Data (Uncensored 'Stars' Only)...
+2026-06-01 20:50:57,563 | model.lgbm_quantile  | INFO     | Training LightGBM on 428,509 training records and 12,314 validation records...
+2026-06-01 20:50:57,564 | model.lgbm_quantile  | INFO     | Training Quantile Regressor (alpha=0.5)...
+2026-06-01 20:51:02,595 | model.lgbm_quantile  | INFO     | Model for alpha 0.5 stopped at iteration 300.
+2026-06-01 20:51:02,596 | model.lgbm_quantile  | INFO     | Training Quantile Regressor (alpha=0.75)...
+2026-06-01 20:51:07,373 | model.lgbm_quantile  | INFO     | Model for alpha 0.75 stopped at iteration 300.
+2026-06-01 20:51:07,373 | model.lgbm_quantile  | INFO     | Training Quantile Regressor (alpha=0.9)...
+2026-06-01 20:51:12,025 | model.lgbm_quantile  | INFO     | Model for alpha 0.9 stopped at iteration 300.
+2026-06-01 20:51:12,025 | model.lgbm_quantile  | INFO     | Building synthetic Future Grid for January 2026...
+2026-06-01 20:51:12,030 | utils.io             | INFO     | Reading Parquet: distributor_seasonality_clean.parquet
+2026-06-01 20:51:12,048 | utils.io             | INFO     |   → 360 rows × 4 columns
+2026-06-01 20:51:12,053 | utils.io             | INFO     | Reading Parquet: holiday_list_clean.parquet
+2026-06-01 20:51:12,055 | utils.io             | INFO     |   → 78 rows × 3 columns
+2026-06-01 20:51:12,066 | model.lgbm_quantile  | INFO     | Predicting Latent Demand Surface for January 2026...
+/Users/k.e.oshada/Documents/Data-Storm-7.0-InsightAI/src/model/lgbm_quantile.py:178: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  historical_max = abt.groupby("Outlet_ID")["Total_Volume"].max().reset_index(name="Historical_Max")
+2026-06-01 20:51:12,329 | model.lgbm_quantile  | INFO     | ============================================================
+2026-06-01 20:51:12,329 | model.lgbm_quantile  | INFO     | 🚀 PHASE 5 COMPLETE!
+2026-06-01 20:51:12,329 | model.lgbm_quantile  | INFO     | Total projected network demand for Jan 2026 (p90 Maximum): 12,755,448.08 Liters
+2026-06-01 20:51:12,329 | model.lgbm_quantile  | INFO     | Final predictions saved strictly to: /Users/k.e.oshada/Documents/Data-Storm-7.0-InsightAI/output/insightai_predictions.csv (Format: Outlet_ID, Maximum_Monthly_Liters)
+2026-06-01 20:51:12,329 | model.lgbm_quantile  | INFO     | Feature importances (gain) saved to: output/lgbm_feature_importances.csv
+2026-06-01 20:51:12,329 | model.lgbm_quantile  | INFO     | ============================================================

@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  1 JUN 2026 19:44
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  1 JUN 2026 20:41
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**InsightAI_Final_Report.tex
-(./InsightAI_Final_Report.tex
+**output/InsightAI_Final_Report.tex
+(./output/InsightAI_Final_Report.tex
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
 (/usr/local/texlive/2025basic/texmf-dist/tex/latex/base/article.cls
@@ -53,6 +53,9 @@ Package: iftex 2024/12/12 v1.0g TeX engine tests
 \Gm@layouthoffset=\dimen148
 \Gm@layoutvoffset=\dimen149
 \Gm@dimlist=\toks20
+)
+(/usr/local/texlive/2025basic/texmf-dist/tex/latex/setspace/setspace.sty
+Package: setspace 2022/12/04 v6.7b set line spacing
 )
 (/usr/local/texlive/2025basic/texmf-dist/tex/latex/graphics/graphicx.sty
 Package: graphicx 2021/09/16 v1.2d Enhanced LaTeX Graphics (DPC,SPQR)
@@ -330,27 +333,27 @@ ef
 File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count302
 \l__pdf_internal_box=\box56
-) (./InsightAI_Final_Report.aux)
+) (output/InsightAI_Final_Report.aux)
 \openout1 = `InsightAI_Final_Report.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 18.
-LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -360,15 +363,15 @@ LaTeX Font Info:    ... okay on input line 18.
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
 * modes: 
-* h-part:(L,W,R)=(50.58878pt, 496.33032pt, 50.58878pt)
-* v-part:(T,H,B)=(50.58878pt, 743.8693pt, 50.58878pt)
+* h-part:(L,W,R)=(57.81621pt, 481.87546pt, 57.81621pt)
+* v-part:(T,H,B)=(57.81621pt, 729.41443pt, 57.81621pt)
 * \paperwidth=597.50787pt
 * \paperheight=845.04684pt
-* \textwidth=496.33032pt
-* \textheight=743.8693pt
-* \oddsidemargin=-21.68121pt
-* \evensidemargin=-21.68121pt
-* \topmargin=-58.68121pt
+* \textwidth=481.87546pt
+* \textheight=729.41443pt
+* \oddsidemargin=-14.45378pt
+* \evensidemargin=-14.45378pt
+* \topmargin=-51.45378pt
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=10.0pt
@@ -410,8 +413,8 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
-Package hyperref Info: Link coloring OFF on input line 18.
- (./InsightAI_Final_Report.out) (./InsightAI_Final_Report.out)
+Package hyperref Info: Link coloring OFF on input line 20.
+ (output/InsightAI_Final_Report.out) (output/InsightAI_Final_Report.out)
 \@outlinefile=\write3
 \openout3 = `InsightAI_Final_Report.out'.
 
@@ -423,9 +426,9 @@ Package hyperref Info: Link coloring OFF on input line 18.
 <plots/plot_1_ghost_exorcism.png, id=99, 578.16pt x 361.35pt>
 File: plots/plot_1_ghost_exorcism.png Graphic file (type png)
 <use plots/plot_1_ghost_exorcism.png>
-Package pdftex.def Info: plots/plot_1_ghost_exorcism.png  used on input line 59
+Package pdftex.def Info: plots/plot_1_ghost_exorcism.png  used on input line 61
 .
-(pdftex.def)             Requested size: 238.23642pt x 148.8933pt.
+(pdftex.def)             Requested size: 231.29816pt x 144.5595pt.
 
 
 
@@ -433,90 +436,91 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.66 
-      [1 <./plots/plot_1_ghost_exorcism.png>]
-Overfull \hbox (24.96909pt too wide) in paragraph at lines 74--74
-[]\OT1/cmr/bx/n/14.4 Portfolio Cor-rec-tion via Re-gional Grouped Im-pu-ta-tion
- (Micro-Segment
- []
+l.65 
+      [1]
 
-
-
-[2]
+[2 <output/plots/plot_1_ghost_exorcism.png>]
 <plots/plot_2_spatial_hotspots.png, id=117, 462.528pt x 346.896pt>
 File: plots/plot_2_spatial_hotspots.png Graphic file (type png)
 <use plots/plot_2_spatial_hotspots.png>
 Package pdftex.def Info: plots/plot_2_spatial_hotspots.png  used on input line 
-103.
-(pdftex.def)             Requested size: 238.23642pt x 178.67725pt.
-<plots/plot_5_elbow_method.png, id=118, 578.16pt x 361.35pt>
+105.
+(pdftex.def)             Requested size: 231.29816pt x 173.47403pt.
+
+
+[3]
+<plots/plot_5_elbow_method.png, id=126, 578.16pt x 361.35pt>
 File: plots/plot_5_elbow_method.png Graphic file (type png)
 <use plots/plot_5_elbow_method.png>
-Package pdftex.def Info: plots/plot_5_elbow_method.png  used on input line 117.
+Package pdftex.def Info: plots/plot_5_elbow_method.png  used on input line 119.
 
-(pdftex.def)             Requested size: 208.45782pt x 130.2844pt.
-
-
-[3 <./plots/plot_2_spatial_hotspots.png>]
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 122.
+(pdftex.def)             Requested size: 202.3868pt x 126.49094pt.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 122.
+(hyperref)                removing `math shift' on input line 124.
 
-<plots/plot_3_feature_importance.png, id=129, 722.7pt x 433.62pt>
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 124.
+
+
+
+[4 <output/plots/plot_2_spatial_hotspots.png> <output/plots/plot_5_elbow_method
+.png>]
+<plots/plot_3_feature_importance.png, id=137, 722.7pt x 433.62pt>
 File: plots/plot_3_feature_importance.png Graphic file (type png)
 <use plots/plot_3_feature_importance.png>
 Package pdftex.def Info: plots/plot_3_feature_importance.png  used on input lin
-e 129.
-(pdftex.def)             Requested size: 238.23642pt x 142.94286pt.
-<plots/plot_4_scatter_unconstrained.png, id=130, 578.16pt x 433.62pt>
+e 131.
+(pdftex.def)             Requested size: 231.29816pt x 138.77446pt.
+<plots/plot_4_scatter_unconstrained.png, id=138, 578.16pt x 433.62pt>
 File: plots/plot_4_scatter_unconstrained.png Graphic file (type png)
 <use plots/plot_4_scatter_unconstrained.png>
 Package pdftex.def Info: plots/plot_4_scatter_unconstrained.png  used on input 
-line 141.
-(pdftex.def)             Requested size: 238.23642pt x 178.67195pt.
+line 143.
+(pdftex.def)             Requested size: 231.29816pt x 173.47139pt.
 
 
-[4 <./plots/plot_5_elbow_method.png> <./plots/plot_3_feature_importance.png>]
+[5 <output/plots/plot_3_feature_importance.png> <output/plots/plot_4_scatter_un
+constrained.png>]
 
-[5 <./plots/plot_4_scatter_unconstrained.png>]
-<plots/plot_6_budget_allocation.png, id=148, 650.43pt x 361.35pt>
+[6]
+<plots/plot_6_budget_allocation.png, id=153, 650.43pt x 361.35pt>
 File: plots/plot_6_budget_allocation.png Graphic file (type png)
 <use plots/plot_6_budget_allocation.png>
 Package pdftex.def Info: plots/plot_6_budget_allocation.png  used on input line
- 200.
-(pdftex.def)             Requested size: 238.23642pt x 132.35205pt.
-<plots/plot_7_roi_yield.png, id=149, 650.43pt x 361.35pt>
+ 202.
+(pdftex.def)             Requested size: 231.29816pt x 128.49794pt.
+<plots/plot_7_roi_yield.png, id=154, 650.43pt x 361.35pt>
 File: plots/plot_7_roi_yield.png Graphic file (type png)
 <use plots/plot_7_roi_yield.png>
-Package pdftex.def Info: plots/plot_7_roi_yield.png  used on input line 205.
-(pdftex.def)             Requested size: 238.23642pt x 132.35205pt.
+Package pdftex.def Info: plots/plot_7_roi_yield.png  used on input line 207.
+(pdftex.def)             Requested size: 231.29816pt x 128.49794pt.
 
 
-[6 <./plots/plot_6_budget_allocation.png> <./plots/plot_7_roi_yield.png>]
-<plots/dashboard_kpi.png, id=161, 1439.3775pt x 745.78625pt>
+[7 <output/plots/plot_6_budget_allocation.png> <output/plots/plot_7_roi_yield.p
+ng>]
+<plots/dashboard_kpi.png, id=165, 1439.3775pt x 745.78625pt>
 File: plots/dashboard_kpi.png Graphic file (type png)
 <use plots/dashboard_kpi.png>
-Package pdftex.def Info: plots/dashboard_kpi.png  used on input line 233.
-(pdftex.def)             Requested size: 238.23642pt x 123.43633pt.
-<plots/dashboard_xai.png, id=162, 1270.7475pt x 792.9625pt>
+Package pdftex.def Info: plots/dashboard_kpi.png  used on input line 235.
+(pdftex.def)             Requested size: 231.29816pt x 119.84032pt.
+<plots/dashboard_xai.png, id=166, 1270.7475pt x 792.9625pt>
 File: plots/dashboard_xai.png Graphic file (type png)
 <use plots/dashboard_xai.png>
-Package pdftex.def Info: plots/dashboard_xai.png  used on input line 238.
-(pdftex.def)             Requested size: 238.23642pt x 148.6559pt.
+Package pdftex.def Info: plots/dashboard_xai.png  used on input line 240.
+(pdftex.def)             Requested size: 231.29816pt x 144.32423pt.
 
-Underfull \hbox (badness 4279) in paragraph at lines 258--258
-[]\OT1/cmr/bx/n/8 5. Ex-plain-able AI
+
+[8 <output/plots/dashboard_kpi.png> <output/plots/dashboard_xai.png>]
+Underfull \hbox (badness 2486) in paragraph at lines 280--280
+[]\OT1/cmr/bx/n/8 7. Busi-ness Con-straints
  []
 
 
 
-[7 <./plots/dashboard_kpi.png> <./plots/dashboard_xai.png>]
-
-[8] (./InsightAI_Final_Report.aux)
+[9] (output/InsightAI_Final_Report.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
@@ -526,13 +530,13 @@ Package rerunfilecheck Info: File `InsightAI_Final_Report.out' has not changed.
 (rerunfilecheck)             Checksum: 342135DDBBF3B521568134996A22D6AE;6573.
  ) 
 Here is how much of TeX's memory you used:
- 10296 strings out of 474662
- 161802 string characters out of 5751109
- 570716 words of memory out of 5000000
- 33181 multiletter control sequences out of 15000+600000
+ 10345 strings out of 474662
+ 162868 string characters out of 5751109
+ 575089 words of memory out of 5000000
+ 33224 multiletter control sequences out of 15000+600000
  566472 words of font info for 63 fonts, out of 8000000 for 9000
  319 hyphenation exceptions out of 8191
- 75i,13n,79p,1273b,523s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,13n,79p,1280b,501s stack positions out of 10000i,1000n,20000p,200000b,200000s
  </Users/k.e.oshada/Library/texlive/2025basic/texmf-var/fonts/pk/ljfour/jknap
 pen/ec/tcrm1000.600pk></usr/local/texlive/2025basic/texmf-dist/fonts/type1/publ
 ic/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2025basic/texmf-dist/fonts/type1/
@@ -543,20 +547,21 @@ onts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2025basic/texmf-di
 st/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2025basic/texm
 f-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/local/texlive/2025basic/t
 exmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2025basi
-c/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2025b
-asic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/20
-25basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/
-2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texliv
-e/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/te
-xlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local
-/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/l
-ocal/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></u
-sr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb>
-
-Output written on InsightAI_Final_Report.pdf (9 pages, 4592153 bytes).
+c/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2025b
+asic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/20
+25basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive
+/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texli
+ve/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/tex
+live/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local
+/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/lo
+cal/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></us
+r/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
+</usr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.p
+fb>
+Output written on output/InsightAI_Final_Report.pdf (10 pages, 4607492 bytes).
 PDF statistics:
- 268 PDF objects out of 1000 (max. 8388607)
- 201 compressed objects within 3 object streams
- 43 named destinations out of 1000 (max. 500000)
+ 277 PDF objects out of 1000 (max. 8388607)
+ 207 compressed objects within 3 object streams
+ 44 named destinations out of 1000 (max. 500000)
  222 words of extra memory for PDF output out of 10000 (max. 10000000)
 
