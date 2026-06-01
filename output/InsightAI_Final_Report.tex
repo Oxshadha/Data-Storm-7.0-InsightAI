@@ -155,7 +155,12 @@ For each outlet $i$ in the Western Province:
     \item $G_i = \max(0, P_i - H_i)$: Growth Gap, representing the maximum latent demand we can unlock.
     \item $S_i$: Allocated promotional spend in LKR.
 \end{itemize}
-We model the incremental sales lift $L_i(S_i)$ using a threshold-based response formulation subject to discrete hardware limits. Instead of a continuous curve, the business reality dictates that volume lifts are unlocked through discrete trade packages $S_i \in \{15000, 40000, 90000\}$.
+We model the incremental sales lift $L_i(S_i)$ using a threshold-based response formulation subject to discrete hardware limits. Instead of a continuous curve allocating theoretical fractional budgets, business reality dictates that volume lifts are unlocked through discrete physical trade packages $S_i$:
+\begin{itemize}
+    \item \textbf{Tier 1 (90,000 LKR):} Core Asset Injection (e.g., new double-door cooler + exterior billboard), restricted to high-potential shops lacking hardware.
+    \item \textbf{Tier 2 (40,000 LKR):} Refurbishment \& Branding (e.g., cooler repair, shelf branding, painting) for mid-tier shops requiring visibility.
+    \item \textbf{Tier 3 (15,000 LKR):} POSM \& Trade Discounts (e.g., posters, danglers, invoice discounts) for saturated urban hubs where price incentives drive volume.
+\end{itemize}
 \[ L_i(S_i) = \text{Volume\_Lift}_i \times \text{Dominance\_Multiplier}_i \cdot X_i \]
 where $\text{Volume\_Lift}_i = G_i$ (the predicted potential minus the historical baseline) and $X_i \in \{0, 1\}$ is a binary decision variable indicating whether an outlet receives a package. The \textbf{Dominance Multiplier} is defined as $1.0 - (\text{Competitive\_Saturation\_Index}_i / \max(\text{CSI}))$, mathematically bounded between $[0.5, 1.0]$. This explicitly penalizes investments in heavily cannibalized zones, forcing the optimizer to route budget to isolated spatial monopolies.
 
