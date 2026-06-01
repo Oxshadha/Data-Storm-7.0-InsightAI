@@ -184,6 +184,7 @@ def get_allocations():
     else:
         # Load pre-computed
         allocs = pd.read_csv("output/insightai_budget_allocations.csv")
+        allocs = allocs.rename(columns={"Trade Spend Allocation (LKR)": "Trade_Spend_Allocation"})
         return allocs
 
 allocations_df = get_allocations()
