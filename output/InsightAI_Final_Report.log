@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  1 JUN 2026 01:09
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  1 JUN 2026 01:34
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -495,8 +495,8 @@ File: plots/plot_7_roi_yield.png Graphic file (type png)
 Package pdftex.def Info: plots/plot_7_roi_yield.png  used on input line 200.
 (pdftex.def)             Requested size: 238.23642pt x 132.35205pt.
 
-Underfull \hbox (badness 4279) in paragraph at lines 237--237
-[]\OT1/cmr/bx/n/8 3. Ex-plain-able AI
+Underfull \hbox (badness 4279) in paragraph at lines 239--239
+[]\OT1/cmr/bx/n/8 5. Ex-plain-able AI
  []
 
 
@@ -508,25 +508,16 @@ Underfull \hbox (badness 4279) in paragraph at lines 237--237
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
+Package rerunfilecheck Info: File `InsightAI_Final_Report.out' has not changed.
 
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
-
-Package rerunfilecheck Warning: File `InsightAI_Final_Report.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `InsightAI_Final_Report.out':
-(rerunfilecheck)             Before: B36D71353BD8C0FAE8ACA09512D247A8;5926
-(rerunfilecheck)             After:  B74C1BE7C9AD2EBFEEC6F9C7FA56D1A8;6043.
+(rerunfilecheck)             Checksum: B74C1BE7C9AD2EBFEEC6F9C7FA56D1A8;6043.
  ) 
 Here is how much of TeX's memory you used:
- 10277 strings out of 474662
- 161342 string characters out of 5751109
- 572716 words of memory out of 5000000
- 33166 multiletter control sequences out of 15000+600000
- 566304 words of font info for 62 fonts, out of 8000000 for 9000
+ 10279 strings out of 474662
+ 161361 string characters out of 5751109
+ 574716 words of memory out of 5000000
+ 33167 multiletter control sequences out of 15000+600000
+ 566472 words of font info for 63 fonts, out of 8000000 for 9000
  319 hyphenation exceptions out of 8191
  75i,13n,79p,1273b,523s stack positions out of 10000i,1000n,20000p,200000b,200000s
  </Users/k.e.oshada/Library/texlive/2025basic/texmf-var/fonts/pk/ljfour/jknap
@@ -546,11 +537,13 @@ asic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/20
 e/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/te
 xlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local
 /texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/l
-ocal/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on InsightAI_Final_Report.pdf (8 pages, 1122521 bytes).
+ocal/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></u
+sr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb>
+
+Output written on InsightAI_Final_Report.pdf (8 pages, 1131882 bytes).
 PDF statistics:
- 251 PDF objects out of 1000 (max. 8388607)
- 192 compressed objects within 2 object streams
+ 256 PDF objects out of 1000 (max. 8388607)
+ 195 compressed objects within 2 object streams
  40 named destinations out of 1000 (max. 500000)
  212 words of extra memory for PDF output out of 10000 (max. 10000000)
 
