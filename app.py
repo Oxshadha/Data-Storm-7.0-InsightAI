@@ -123,9 +123,8 @@ if "xai_response" not in st.session_state:
     st.session_state.xai_response = None
 if "allocations" not in st.session_state:
     st.session_state.allocations = None
-# Force reset to ensure new 5M CSV is loaded
-st.session_state.live_solve_mode = False
-st.session_state.allocations = None
+if "live_solve_mode" not in st.session_state:
+    st.session_state.live_solve_mode = False
 
 # ── Load and Merge Datasets ─────────────────────────────────────────────
 @st.cache_data(ttl=5)

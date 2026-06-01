@@ -50,7 +50,7 @@ def _generate_fallback_narrative(context: dict) -> str:
     cooler_count = context.get("cooler_count", 0)
     
     # 1. Why score
-    p1 = f"**Why the model assigned this specific score:**<br>Outlet {outlet_id} operates as a {tier} retailer, which historically constrained its performance to a plateau of {hist_avg:,.1f} L/month. However, when evaluating the underlying spatial demographics and current deployment of {cooler_count} coolers, our Decensoring Model identified a significant suppressed demand. Removing artificial supply caps reveals a True Market Potential of **{pot:,.1f} L/month**, representing a massive **{growth_pct}** expansion opportunity that the current distribution network is missing."
+    p1 = f"Outlet {outlet_id} operates as a {tier} retailer, which historically constrained its performance to a plateau of {hist_avg:,.1f} L/month. However, when evaluating the underlying spatial demographics and current deployment of {cooler_count} coolers, our Decensoring Model identified a significant suppressed demand. Removing artificial supply caps reveals a True Market Potential of **{pot:,.1f} L/month**, representing a massive **{growth_pct}** expansion opportunity that the current distribution network is missing."
     
     # 2. Local conditions and constraints
     if is_goldmine:
@@ -59,7 +59,7 @@ def _generate_fallback_narrative(context: dict) -> str:
         env_text = "The outlet operates in a highly saturated competitive zone. The local environment is densely packed with rival retailers, meaning this investment is highly defensive. Trade marketing here is required not just to grow, but to aggressively protect and capture market share from competitors in the immediate vicinity."
     else:
         env_text = "The location holds a balanced spatial footprint with moderate competitive exposure. It is neither completely isolated nor hyper-competitive, representing a stable environment for consistent, targeted marketing deployments."
-    p2 = f"<br><br>**How local conditions and constraints influenced the result:**<br>{env_text}"
+    p2 = env_text
     
     # 3. Factors increasing/decreasing prediction
     if top_drivers:
@@ -77,18 +77,26 @@ def _generate_fallback_narrative(context: dict) -> str:
     else:
         rec_text = "Given the current constraints and ROI thresholds, no additional budget has been allocated. We recommend maintaining standard distribution and re-evaluating in the next quarter."
         
-    p3 = f"<br><br>**Which factors increased or decreased the prediction:**<br>{driver_text} {rec_text}"
+    p3 = f"{driver_text} {rec_text}"
     
     # 4. Confidence & Risk
     if budget > 0:
         risk_profile = "Low Risk / High Reward" if is_goldmine else "Moderate Risk / High Reward"
-        risk_text = f"This prediction is calculated using a strict 90% statistical confidence interval. In simple business terms, the AI is 90% certain that if we remove all supply constraints, this outlet has the capacity to reach {pot:,.1f} L/month, but is highly unlikely to exceed it. Because the ROI is exceptionally strong and competition is manageable, this is a **{risk_profile}** investment."
+        risk_text = f"This prediction is calculated using a strict 90% statistical confidence interval (p90 Quantile Regression). In simple business terms, the AI is 90% certain that if we remove all supply constraints, this outlet has the capacity to reach {pot:,.1f} L/month, but is highly unlikely to exceed it. Because the ROI is exceptionally strong and competition is manageable, this is a **{risk_profile}** investment."
     else:
-        risk_text = f"This prediction is calculated using a strict 90% statistical confidence interval. In simple business terms, the AI is 90% certain that even if we flood this outlet with unlimited coolers and supply, it will not exceed {pot:,.1f} L/month. Because the expected return does not justify the cost of deployment, investing capital here carries an **Unfavorable Risk Profile** compared to better opportunities in the network."
+        risk_text = f"This prediction is calculated using a strict 90% statistical confidence interval (p90 Quantile Regression). In simple business terms, the AI is 90% certain that even if we flood this outlet with unlimited coolers and supply, it will not exceed {pot:,.1f} L/month. Because the expected return does not justify the cost of deployment, investing capital here carries an **Unfavorable Risk Profile** compared to better opportunities in the network."
         
-    p4 = f"<br><br>**Decision Confidence & Risk Assessment:**<br>*{risk_text}*"
+    p4 = f"*{risk_text}*"
     
-    return p1 + p2 + p3 + p4
+    # Combine into a clean 3-bullet list + separate risk section using standard Markdown
+    return f"""
+* **Why did the model give that outlet its specific score?** {p1}
+* **Which factors increased or decreased the prediction?** {p3}
+* **How local conditions and constraints influenced the result?** {p2}
+
+**Decision Confidence & Risk Assessment:**
+{p4}
+    """.strip()
 
 
 def explain_outlet(context: dict) -> str:
@@ -108,7 +116,7 @@ def explain_outlet(context: dict) -> str:
     if HAS_GEMINI and api_key:
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-2.5-flash")
             
             # Format top drivers for prompt
             top_drivers_str = "\n".join([f"- {d[0]}: {d[1]:.2f}" for d in context.get("top_drivers", [])])
@@ -138,17 +146,15 @@ Decision Engine Reason: {context.get('funding_reason', 'N/A')}
 
 RULES:
 1. Do NOT use data science jargon (no 'SHAP', 'MILP', 'Decensoring').
-2. You MUST structure your response into exactly four sections using bold HTML breaks or Markdown headers exactly as follows:
-   **Why the model assigned this specific score:** (Explain the gap between historical caps/coolers and predicted potential).
-   <br><br>
-   **How local conditions and constraints influenced the result:** (Explain spatial mapping and competition intensity).
-   <br><br>
-   **Which factors increased or decreased the prediction:** (Explain which POI drivers pushed the score up/down, and conclude with the investment ROI).
-   <br><br>
-   **Decision Confidence & Risk Assessment:** (State that the prediction uses a 90% statistical confidence interval. Crucially, explain what this means in simple, non-technical business terms: e.g., 'In simple terms, the AI is 90% certain that even with unlimited supply, the outlet will not exceed X Liters'. Assess if the investment is Low/Moderate/High risk. Format the text of this specific section in *italics* to distinguish it from the core analysis).
-3. Write in a fluid, professional, and detailed business narrative style. Provide 2-3 comprehensive sentences per section. Do NOT write brief, robotic one-liners.
-4. Explicitly explain the business mechanics (e.g., how the specific footfall drivers physically bring in customers, or how the lack of competition guarantees market share).
-5. Bold key metrics for visual emphasis.
+2. You MUST structure your response strictly using standard Markdown bullet points (`* `) for the first three points, followed by a separate markdown paragraph for the fourth point. Do NOT use HTML tags like `<ul>` or `<li>`.
+3. The three bullet points MUST be exactly these headers in bold:
+   * **Why did the model give that outlet its specific score?** (Explain the gap between historical caps/coolers and predicted potential).
+   * **Which factors increased or decreased the prediction?** (Explain which POI drivers pushed the score up/down, and conclude with the investment ROI).
+   * **How local conditions and constraints influenced the result?** (Explain spatial mapping and competition intensity).
+
+   After the bullet list, create a new section starting exactly with: **Decision Confidence & Risk Assessment:** (State that the prediction uses a 90% statistical confidence interval. Crucially, explain what this means in simple terms: e.g., 'In simple terms, the AI is 90% certain that even with unlimited supply, the outlet will not exceed X Liters'. Assess if the investment is Low/Moderate/High risk. Format the text of this specific section in *italics*).
+4. Keep the text inside each bullet point concise, punchy, and business-focused (2-3 sentences max per bullet). Do not write massive paragraphs.
+5. Bold key metrics (like Liters and LKR) for visual emphasis.
 """
             response = model.generate_content(prompt)
             return response.text.strip()
