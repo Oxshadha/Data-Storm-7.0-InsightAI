@@ -83,7 +83,7 @@ def run_spend_optimizer(config: dict | None = None) -> None:
     keep_cols = [
         "Outlet_ID", "Distributor_ID", "Region", "Cooler_Count",
         "Volume_Liters", "Avg_Monthly_Volume", "is_isolated_goldmine",
-        "Dynamic_Tier"
+        "Dynamic_Tier", "poi_total_catchment"
     ]
     # Only keep columns that exist
     keep_cols = [c for c in keep_cols if c in abt_df.columns]
@@ -130,9 +130,12 @@ def run_spend_optimizer(config: dict | None = None) -> None:
     # ── Assign Discrete Investment Costs (The Weight) ─────────────────────
     wp_outlets["investment_cost"] = wp_outlets.apply(_assign_investment_tier, axis=1)
 
-    # Filter: only include outlets with positive lift (worth investing in)
-    candidates = wp_outlets[wp_outlets["volume_lift"] > 10.0].copy().reset_index(drop=True)
-    logger.info(f"Candidate outlets with positive lift (>10L): {len(candidates):,}")
+    # Filter: only include outlets with positive lift (worth investing in) and non-zero spatial footprint (removes offshore synthetics)
+    candidates = wp_outlets[
+        (wp_outlets["volume_lift"] > 10.0) & 
+        (wp_outlets["poi_total_catchment"] > 0.0)
+    ].copy().reset_index(drop=True)
+    logger.info(f"Candidate outlets with positive lift (>10L) and valid coordinates: {len(candidates):,}")
 
     # ── Cost Tier Distribution ────────────────────────────────────────────
     tier_counts = candidates["investment_cost"].value_counts().sort_index()

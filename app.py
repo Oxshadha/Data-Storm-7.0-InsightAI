@@ -166,7 +166,8 @@ def load_dashboard_data():
     
     # Pre-compute metrics
     outlets["Is_Censored_Flag"] = outlets["Is_Censored"].apply(lambda x: "Sales-Capped" if x == 1 else "Uncapped")
-    outlets["Volume_Lift"] = np.maximum(0, outlets["Maximum_Monthly_Liters"] - outlets["Avg_Monthly_Volume"])
+    outlets["Raw_Volume_Lift"] = np.maximum(0, outlets["Maximum_Monthly_Liters"] - outlets["Avg_Monthly_Volume"])
+    outlets["Volume_Lift"] = outlets["Raw_Volume_Lift"] # Base lift before sensitivity
     
     return outlets, abt, importances
 
@@ -214,6 +215,17 @@ selected_distributor = st.sidebar.multiselect(
 )
 
 funded_only = st.sidebar.checkbox("Show Only Funded Outlets", value=False)
+
+st.sidebar.subheader("Model Validation")
+sensitivity_pct = st.sidebar.slider(
+    "Prediction Sensitivity (±%)", 
+    min_value=-20, max_value=20, value=0, step=5,
+    help="Stress-test the budget allocations. If the model is 20% too optimistic, what happens to the ROI?"
+)
+
+# Apply Sensitivity Shock
+if sensitivity_pct != 0:
+    df["Volume_Lift"] = df["Raw_Volume_Lift"] * (1 + (sensitivity_pct / 100.0))
 
 # Tier Definitions
 with st.sidebar.expander(":material/category: Dynamic Tier Definitions", expanded=False):
@@ -318,17 +330,21 @@ st.markdown("<div class='dashboard-header'>InsightAI Spatial Intelligence Dashbo
 st.markdown("<div class='dashboard-subheader'>Outlet Purchase Potential & Trade Spend Optimization Engine</div>", unsafe_allow_html=True)
 
 # ── KPI Ribbon ──────────────────────────────────────────────────────────
-kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
 
 total_spend = filtered_df["Trade_Spend_Allocation"].sum()
 total_lift = filtered_df[filtered_df["Trade_Spend_Allocation"] > 0]["Volume_Lift"].sum()
 total_funded = (filtered_df["Trade_Spend_Allocation"] > 0).sum()
 avg_roi = (total_lift / (total_spend / 1000)) if total_spend > 0 else 0
 
-kpi1.metric("Budget Deployed", f"LKR {total_spend:,.0f}", help="Total amount of Trade Marketing spend allocated across the network.")
-kpi2.metric("Total Volume Lift", f"{total_lift:,.0f} L", help="Expected incremental volume generated above historical baseline.")
-kpi3.metric("Avg ROI (Liters per 1K LKR)", f"{avg_roi:,.1f}", help="Liters of incremental volume gained per 1,000 LKR spent.")
-kpi4.metric("Outlets Funded", f"{total_funded:,}", help="Total number of outlets selected for investment by the MILP optimizer.")
+total_revenue = total_lift * 250  # Assuming 250 LKR / Liter
+payback_months = (total_spend / total_revenue) if total_revenue > 0 else 0
+
+kpi1.metric("Budget Deployed", f"LKR {total_spend/1e6:.1f}M")
+kpi2.metric("Total Volume Lift", f"{total_lift:,.0f} L")
+kpi3.metric("Est. Monthly Revenue", f"LKR {total_revenue/1e6:.1f}M", help="Assuming standard 250 LKR unit price per liter.")
+kpi4.metric("Payback Period", f"{payback_months:.1f} Months", help="Months to break even on the Trade Spend investment.")
+kpi5.metric("Outlets Funded", f"{total_funded:,}")
 
 # ── Tabs ────────────────────────────────────────────────────────────────
 tab1, tab2 = st.tabs(["Strategy & Execution", "Technical Analytics"])
@@ -600,6 +616,18 @@ with tab2:
         
         with st.expander(":material/science: Data Science Note: Identifying Censored Demand"):
             st.write("**Overcoming Historical Quotas:** The rigid vertical alignments on the X-axis represent historical supply-side censoring (e.g., strict distributor quotas capping sales at exactly 600L). By utilizing spatial interaction features, the Quantile Regressor successfully maps the *true* underlying demand (Y-axis), transforming constrained step-functions into a continuous natural distribution.")
+            
+        
+        # KDE Selection Bias Defense Plot
+        st.markdown("### Selection Bias Defense (Censored vs Uncensored)")
+        if os.path.exists("output/plots/plot_8_selection_bias.png"):
+            st.image("output/plots/plot_8_selection_bias.png", use_container_width=True)
+        else:
+            st.warning("Selection Bias plot not found.")
+            
+        with st.expander(":material/policy: Defense Note: Overcoming Urban Bias"):
+            st.write("**The Question:** If the model was trained strictly on Uncensored shops, how can we be sure it generalizes to Censored shops without carrying an urban bias?")
+            st.write("**The Proof:** As the KDE overlap plot proves, both Censored and Uncensored shops share overlapping distributions in Spatial Driver Gravity. Because the model learned from identical topological contexts, the non-linear Quantile Regressor correctly interpolates potential across both segments without extrapolating into unknown feature space.")
         
         # Competitive Saturation
         st.markdown("### Density Distribution (Saturated Zones Only)")
