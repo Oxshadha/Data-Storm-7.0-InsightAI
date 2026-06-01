@@ -45,3 +45,5 @@ env/
 
 # ── Environment Variables ──
 .env
+
+output/QA_CheatSheet.md
