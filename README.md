@@ -62,8 +62,14 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Verify Data Availability
-Ensure that the original `transactions_history_final.csv` and all other provided CSVs are located in the original `Refernce Resources/` or `data/raw/` directory as specified in `config/pipeline_config.yaml`.
+### 2. Verify Data Availability (Important for Pipeline Execution)
+**Note to Judges:** Due to GitHub's strict 100MB file size limit, the massive raw competition datasets (e.g., `transactions_history_final.csv`, `outlet_master.csv`) are explicitly excluded via our `.gitignore`. 
+
+If you wish to execute the full data pipeline from scratch (`run_pipeline.py`), you must:
+1. Download the original competition CSVs.
+2. Place them into the `data/bronze/` and `Refernce Resources/` directories as defined in `config/pipeline_config.yaml`.
+
+*However, if you only want to run the Web Dashboard or view the notebooks, you do **not** need the raw data! We have permanently committed the final pre-computed outputs (`model_input.parquet`, `insightai_budget_allocations.csv`) into the repository so the dashboard works entirely out-of-the-box.*
 
 ### 3. Execute the Master Pipeline
 ```bash
