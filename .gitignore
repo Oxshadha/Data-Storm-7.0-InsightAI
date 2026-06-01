@@ -5,16 +5,17 @@
 *~
 
 # ── Large Data Files (exceed GitHub 100MB limit) ──
-Refernce Resources/*.csv
-Refernce Resources/*.xlsx
-data/bronze/*.csv
+Refernce Resources/**/*.csv
+data/bronze/**/*.csv
 
 # ── Generated Data (reproduce via pipeline) ──
 data/bronze/*.parquet
 data/silver/*.parquet
+!data/silver/outlet_coordinates_clean.parquet
 data/silver/rejected/*.parquet
 data/silver/rejected/rejection_manifest.csv
 data/gold/*.parquet
+!data/gold/model_input.parquet
 data/bronze/poi_raw/*.parquet
 
 # ── Logs ──
@@ -41,3 +42,8 @@ env/
 
 # ── Keep empty dirs ──
 !**/.gitkeep
+
+# ── Environment Variables ──
+.env
+
+output/QA_CheatSheet.md

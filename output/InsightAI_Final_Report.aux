@@ -2,26 +2,48 @@
 \providecommand\hyper@newdestlabel[2]{}
 \providecommand\HyField@AuxAddToFields[1]{}
 \providecommand\HyField@AuxAddToCoFields[2]{}
-\@writefile{toc}{\contentsline {section}{\numberline {1}Data Forensics and Hygiene}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1}Data Cleaning: Medallion Lakehouse Hygiene and Forensics}{1}{section.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.1}System Anomalies: Ghosts and Negative Returns}{1}{subsection.1.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \scriptsize  Variance Stabilization. Demonstrating the stabilization of our target variable after removing extreme system-generated noise and wholesale sell-in spikes.}}{1}{figure.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Distributing Demand: Quarterly Smoothing}{1}{subsection.1.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Handling the "Lazy Labour" Bias}{1}{subsection.1.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \scriptsize  Variance Stabilization. Demonstrating the stabilization of our target variable after removing extreme system-generated noise and wholesale sell-in spikes.}}{2}{figure.1}\protected@file@percent }
+\newlabel{fig:ghost_exorcism}{{1}{2}{\scriptsize Variance Stabilization. Demonstrating the stabilization of our target variable after removing extreme system-generated noise and wholesale sell-in spikes}{figure.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Distributing Demand: Quarterly Smoothing}{2}{subsection.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Handling the "Lazy Labour" Bias}{2}{subsection.1.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.4}Dynamic Tiering: Correcting Static Labels}{2}{subsection.1.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {2}Collaborative Filtering (Portfolio Imbalance)}{2}{section.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}POI Data Acquisition and Spatial Enrichment}{2}{section.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Technical Approach: DuckDB + Overture Maps}{2}{subsection.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Targeted Catchment Drivers vs. Competitors}{2}{subsection.3.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces \scriptsize  Spatial Catchment Hotspots. Visual proof of hidden high-density demand nodes in the Western Province mapped via Overture Data.}}{3}{figure.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Causal Base Logic and Peer Grouping}{3}{section.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Statistical Peer Grouping: K-Means \& Elbow Method}{3}{subsection.4.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \scriptsize  The Elbow Method. Statistically validating our peer-group selection strategy.}}{3}{figure.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Methodology: LightGBM ($p90$) and Validation Strategy}{3}{subsection.4.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \scriptsize  LightGBM Information Gain. Proof that the model relies on causal spatial logic rather than simply memorizing historical sales.}}{4}{figure.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Validating the Uncapped Ceiling: Structural Safety Floor}{4}{subsection.4.3}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \scriptsize  Breaking the Demand Ceiling. Actual sales (blue) hit systemic capacity ceilings, while our 90th-percentile architecture maps the latent potential (green stars) hiding above the constraint.}}{4}{figure.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}GenAI Transparency Log}{4}{section.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6}Interactive Visualization and Strategic Delivery}{5}{section.6}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \scriptsize  2D PCA Cluster Projection. High-resolution projection of the 30 micro-segments, illustrating the dense behavioral and spatial variance captured by our model's peer grouping strategy.}}{5}{figure.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion and Impact Summary}{5}{section.7}\protected@file@percent }
-\gdef \@abspage@last{6}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Portfolio Correction via Regional Grouped Imputation (Micro-Segment Baselines)}{2}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Data Engineering and Scraping Pipeline: POI Spatial Enrichment}{2}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Vectorized Spatial Indexing with SciPy cKDTree}{3}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Continuous Distance-Decay and Huff Gravity Models}{3}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Composite Features: Latent Opportunity Ratio}{3}{subsection.3.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces \scriptsize  Spatial Catchment Hotspots. Visual proof of hidden high-density demand nodes in the Western Province mapped via Overture Data.}}{4}{figure.2}\protected@file@percent }
+\newlabel{fig:spatial_hotspots}{{2}{4}{\scriptsize Spatial Catchment Hotspots. Visual proof of hidden high-density demand nodes in the Western Province mapped via Overture Data}{figure.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}The Mathematical Framework: Causal Base Logic and Uncapping Demand}{4}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Statistical Peer Grouping: K-Means \& Elbow Method}{4}{subsection.4.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \scriptsize  The Elbow Method. Statistically validating our peer-group selection strategy.}}{4}{figure.3}\protected@file@percent }
+\newlabel{fig:elbow_method}{{3}{4}{\scriptsize The Elbow Method. Statistically validating our peer-group selection strategy}{figure.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Methodology: Tobit-Inspired LightGBM ($p90$) and Validation Strategy}{4}{subsection.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \scriptsize  Selection Bias Defense. KDE overlap proves generalizability.}}{5}{figure.4}\protected@file@percent }
+\newlabel{fig:selection_bias}{{4}{5}{\scriptsize Selection Bias Defense. KDE overlap proves generalizability}{figure.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \scriptsize  LightGBM Information Gain proving causal spatial logic.}}{5}{figure.5}\protected@file@percent }
+\newlabel{fig:feature_importance}{{5}{5}{\scriptsize LightGBM Information Gain proving causal spatial logic}{figure.5}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.2.1}Quantile Loss (Pinball) Validation}{5}{subsubsection.4.2.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Out-of-Sample Pinball Loss across Alpha Target Percentiles.}}{5}{table.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Validating the Uncapped Ceiling: Structural Safety Floor}{5}{subsection.4.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \scriptsize  Breaking the Demand Ceiling. Actual sales (blue) hit systemic capacity ceilings, while our 90th-percentile architecture maps the latent potential (green stars) hiding above the constraint.}}{6}{figure.6}\protected@file@percent }
+\newlabel{fig:unconstrained_scatter}{{6}{6}{\scriptsize Breaking the Demand Ceiling. Actual sales (blue) hit systemic capacity ceilings, while our 90th-percentile architecture maps the latent potential (green stars) hiding above the constraint}{figure.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Spend Optimization Logic: Spatially-Aware MILP Allocation}{6}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Mathematical Model Formulation}{6}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}MILP Knapsack Solver and Binding Constraints}{7}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Optimization Results \& Executive ROI}{7}{subsection.5.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Trade Spend Allocation Summary by Distributor}}{7}{table.2}\protected@file@percent }
+\newlabel{tab:optim_results}{{2}{7}{Trade Spend Allocation Summary by Distributor}{table.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces LKR 5M Budget Allocation by Strategic Package}}{7}{figure.7}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Average ROI Yield (Incremental Liters per 1K LKR)}}{7}{figure.8}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces *}}{7}{figure.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Outlet Intelligence Web App and GenAI Explainability}{8}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Hybrid Explainable AI (XAI) Module}{8}{subsection.6.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Executive Decision Dashboard with spatial plotting and MILP budget re-allocation sliders.}}{8}{figure.10}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces GenAI Explainability module dynamically justifying the MILP optimization decisions to stakeholders.}}{8}{figure.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}GenAI Transparency Log}{8}{section.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces InsightAI GenAI Usage and Prompt Transparency}}{9}{table.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion and Impact Summary}{9}{section.8}\protected@file@percent }
+\gdef \@abspage@last{10}

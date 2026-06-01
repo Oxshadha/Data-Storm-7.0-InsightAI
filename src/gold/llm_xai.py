@@ -1,0 +1,168 @@
+"""
+Gold Layer — LLM Explainable AI (XAI) Module.
+
+Generates human-readable, business-oriented narratives explaining model decisions
+for individual retail outlets. Uses a hybrid design:
+  1. Real LLM connection using google-generativeai (Gemini API) if GEMINI_API_KEY is configured.
+  2. Professional, dynamic rule-based narrative engine as a fallback for offline local running.
+
+Usage:
+    from src.gold.llm_xai import explain_outlet
+    explanation = explain_outlet(context)
+"""
+
+import os
+from src.utils.logger import get_logger
+
+logger = get_logger("gold.llm_xai")
+
+# Try importing the Gemini API client
+HAS_GEMINI = False
+try:
+    import google.generativeai as genai
+    HAS_GEMINI = True
+except ImportError:
+    pass
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+
+def _generate_fallback_narrative(context: dict) -> str:
+    """
+    Generates a highly-contextual, professional business narrative based on the pre-computed context object.
+    Ensures the Streamlit app works out-of-the-box without API keys.
+    """
+    outlet_id = context.get("outlet_id", "Unknown Outlet")
+    tier = context.get("tier", "Unknown")
+    hist_avg = context.get("historical_avg", 0.0)
+    pot = context.get("predicted_potential", 0.0)
+    lift = context.get("volume_lift", 0.0)
+    growth_pct = context.get("growth_pct", "+0.0%")
+    budget = context.get("allocated_budget", 0)
+    is_goldmine = context.get("is_goldmine", False)
+    comp_density = context.get("competition_density", 0.0)
+    top_drivers = context.get("top_drivers", [])
+    
+    cooler_count = context.get("cooler_count", 0)
+    
+    # 1. Why score
+    p1 = f"Outlet {outlet_id} operates as a {tier} retailer, which historically constrained its performance to a plateau of {hist_avg:,.1f} L/month. However, when evaluating the underlying spatial demographics and current deployment of {cooler_count} coolers, our Decensoring Model identified a significant suppressed demand. Removing artificial supply caps reveals a True Market Potential of **{pot:,.1f} L/month**, representing a massive **{growth_pct}** expansion opportunity that the current distribution network is missing."
+    
+    # 2. Local conditions and constraints
+    if is_goldmine:
+        env_text = "This location is uniquely positioned in an **Untapped High-Traffic Zone**. It enjoys a rare monopoly advantage with zero direct competitors within a 1km radius. This lack of competitive density means any trade marketing spend here will not be cannibalized by neighboring outlets, allowing you to capture 100% of the localized demand."
+    elif comp_density > 0.05:
+        env_text = "The outlet operates in a highly saturated competitive zone. The local environment is densely packed with rival retailers, meaning this investment is highly defensive. Trade marketing here is required not just to grow, but to aggressively protect and capture market share from competitors in the immediate vicinity."
+    else:
+        env_text = "The location holds a balanced spatial footprint with moderate competitive exposure. It is neither completely isolated nor hyper-competitive, representing a stable environment for consistent, targeted marketing deployments."
+    p2 = env_text
+    
+    # 3. Factors increasing/decreasing prediction
+    if top_drivers:
+        driver_names = [f"{d[0]} (Score: {d[1]:.1f})" for d in top_drivers[:2] if d[1] > 0]
+        if driver_names:
+            driver_text = "The volume prediction is heavily driven upward by strong localized footfall, specifically from " + " and ".join(driver_names) + ". These spatial anchors guarantee a continuous influx of high-intent consumers."
+        else:
+            driver_text = "The volume is driven primarily by baseline demographic stability rather than specific high-impact points of interest."
+    else:
+        driver_text = "The volume is driven primarily by baseline demographic stability rather than specific high-impact points of interest."
+        
+    if budget > 0:
+        roi = context.get("roi_per_1k", "0.0 L/1K LKR")
+        rec_text = f"Consequently, the optimization engine has confidently allocated **LKR {budget:,}** to this outlet. This is projected to yield an exceptional ROI of **{roi}**. We recommend immediate execution of trade marketing activities to fully capture the **{lift:,.1f}L** latent volume lift."
+    else:
+        rec_text = "Given the current constraints and ROI thresholds, no additional budget has been allocated. We recommend maintaining standard distribution and re-evaluating in the next quarter."
+        
+    p3 = f"{driver_text} {rec_text}"
+    
+    # 4. Confidence & Risk
+    if budget > 0:
+        risk_profile = "Low Risk / High Reward" if is_goldmine else "Moderate Risk / High Reward"
+        risk_text = f"This prediction is calculated using a strict 90% statistical confidence interval (p90 Quantile Regression). In simple business terms, the AI is 90% certain that if we remove all supply constraints, this outlet has the capacity to reach {pot:,.1f} L/month, but is highly unlikely to exceed it. Because the ROI is exceptionally strong and competition is manageable, this is a **{risk_profile}** investment."
+    else:
+        risk_text = f"This prediction is calculated using a strict 90% statistical confidence interval (p90 Quantile Regression). In simple business terms, the AI is 90% certain that even if we flood this outlet with unlimited coolers and supply, it will not exceed {pot:,.1f} L/month. Because the expected return does not justify the cost of deployment, investing capital here carries an **Unfavorable Risk Profile** compared to better opportunities in the network."
+        
+    p4 = f"*{risk_text}*"
+    
+    # Combine into a clean 3-bullet list + separate risk section using standard Markdown
+    return f"""
+* **Why did the model give that outlet its specific score?** {p1}
+* **Which factors increased or decreased the prediction?** {p3}
+* **How local conditions and constraints influenced the result?** {p2}
+
+**Decision Confidence & Risk Assessment:**
+{p4}
+    """.strip()
+
+
+def explain_outlet(context: dict) -> str:
+    """
+    Generates a natural language explanation of the model's prediction for an outlet.
+    
+    Parameters
+    ----------
+    context : dict containing comprehensive business metrics, spatial drivers, and financial ROI.
+    
+    Returns
+    -------
+    str : Narrative explanation
+    """
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    
+    if HAS_GEMINI and api_key:
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            
+            # Format top drivers for prompt
+            top_drivers_str = "\n".join([f"- {d[0]}: {d[1]:.2f}" for d in context.get("top_drivers", [])])
+            
+            # Construct a clear, structured prompt
+            prompt = f"""
+You are an AI Trade Marketing Director for a beverage company in Sri Lanka.
+Analyze the provided OUTLET DATA PROFILE.
+Generate a structured, 3-part business explanation for the Regional Sales Manager explaining WHY this outlet was assigned its specific prediction and budget.
+
+OUTLET DATA PROFILE:
+- Outlet ID: {context.get('outlet_id', 'Unknown')}
+- Market Position: {context.get('tier', 'Unknown')}
+- Cooler Count: {context.get('cooler_count', 0)}
+- Historical Sales Average: {context.get('historical_avg', 0.0):.1f} Liters/month
+- True Market Potential: {context.get('predicted_potential', 0.0):.1f} Liters/month
+- Volume Lift: {context.get('volume_lift', 0.0):.1f} Liters/month ({context.get('growth_pct', '0%')})
+- Recommended Investment: LKR {context.get('allocated_budget', 0):,}
+- Expected ROI: {context.get('roi_per_1k', '0.0 L/1K LKR')}
+- Untapped High-Traffic Zone (Goldmine): {'Yes' if context.get('is_goldmine', False) else 'No'}
+- Competition Density: {context.get('competition_density', 0.0):.4f}
+
+Top Footfall Drivers:
+{top_drivers_str}
+
+Decision Engine Reason: {context.get('funding_reason', 'N/A')}
+
+RULES:
+1. Do NOT use data science jargon (no 'SHAP', 'MILP', 'Decensoring').
+2. You MUST structure your response strictly using standard Markdown bullet points (`* `) for the first three points, followed by a separate markdown paragraph for the fourth point. Do NOT use HTML tags like `<ul>` or `<li>`.
+3. The three bullet points MUST be exactly these headers in bold:
+   * **Why did the model give that outlet its specific score?** (Explain the gap between historical caps/coolers and predicted potential).
+   * **Which factors increased or decreased the prediction?** (Explain which POI drivers pushed the score up/down, and conclude with the investment ROI).
+   * **How local conditions and constraints influenced the result?** (Explain spatial mapping and competition intensity).
+
+   After the bullet list, create a new section starting exactly with: **Decision Confidence & Risk Assessment:** (State that the prediction uses a 90% statistical confidence interval. Crucially, explain what this means in simple terms: e.g., 'In simple terms, the AI is 90% certain that even with unlimited supply, the outlet will not exceed X Liters'. Assess if the investment is Low/Moderate/High risk. Format the text of this specific section in *italics*).
+4. Keep the text inside each bullet point concise, punchy, and business-focused (2-3 sentences max per bullet). Do not write massive paragraphs.
+5. Bold key metrics (like Liters and LKR) for visual emphasis.
+"""
+            response = model.generate_content(prompt)
+            return response.text.strip()
+            
+        except Exception as e:
+            logger.warning(f"Gemini API call failed: {e}. Falling back to rule-based engine.")
+            return _generate_fallback_narrative(context)
+            
+    else:
+        # Offline or no API key
+        return _generate_fallback_narrative(context)

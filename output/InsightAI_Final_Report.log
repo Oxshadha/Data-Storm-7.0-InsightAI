@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  17 MAY 2026 05:54
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.16)  1 JUN 2026 23:17
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -53,6 +53,9 @@ Package: iftex 2024/12/12 v1.0g TeX engine tests
 \Gm@layouthoffset=\dimen148
 \Gm@layoutvoffset=\dimen149
 \Gm@dimlist=\toks20
+)
+(/usr/local/texlive/2025basic/texmf-dist/tex/latex/setspace/setspace.sty
+Package: setspace 2022/12/04 v6.7b set line spacing
 )
 (/usr/local/texlive/2025basic/texmf-dist/tex/latex/graphics/graphicx.sty
 Package: graphicx 2021/09/16 v1.2d Enhanced LaTeX Graphics (DPC,SPQR)
@@ -305,32 +308,52 @@ Package: fancyhdr 2025/02/07 v5.2 Extensive control of page headers and footers
 \f@nch@widthR=\skip68
 \@temptokenb=\toks28
 )
+(/usr/local/texlive/2025basic/texmf-dist/tex/latex/booktabs/booktabs.sty
+Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
+\heavyrulewidth=\dimen165
+\lightrulewidth=\dimen166
+\cmidrulewidth=\dimen167
+\belowrulesep=\dimen168
+\belowbottomsep=\dimen169
+\aboverulesep=\dimen170
+\abovetopsep=\dimen171
+\cmidrulesep=\dimen172
+\cmidrulekern=\dimen173
+\defaultaddspace=\dimen174
+\@cmidla=\count298
+\@cmidlb=\count299
+\@aboverulesep=\dimen175
+\@belowrulesep=\dimen176
+\@thisruleclass=\count300
+\@lastruleclass=\count301
+\@thisrulewidth=\dimen177
+)
 (/usr/local/texlive/2025basic/texmf-dist/tex/latex/l3backend/l3backend-pdftex.d
 ef
 File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count298
+\l__color_backend_stack_int=\count302
 \l__pdf_internal_box=\box56
 ) (output/InsightAI_Final_Report.aux)
 \openout1 = `InsightAI_Final_Report.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 17.
-LaTeX Font Info:    ... okay on input line 17.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 17.
-LaTeX Font Info:    ... okay on input line 17.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 17.
-LaTeX Font Info:    ... okay on input line 17.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 17.
-LaTeX Font Info:    ... okay on input line 17.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 17.
-LaTeX Font Info:    ... okay on input line 17.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 17.
-LaTeX Font Info:    ... okay on input line 17.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 17.
-LaTeX Font Info:    ... okay on input line 17.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 17.
-LaTeX Font Info:    ... okay on input line 17.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 17.
-LaTeX Font Info:    ... okay on input line 17.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 20.
+LaTeX Font Info:    ... okay on input line 20.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -340,15 +363,15 @@ LaTeX Font Info:    ... okay on input line 17.
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
 * modes: 
-* h-part:(L,W,R)=(50.58878pt, 496.33032pt, 50.58878pt)
-* v-part:(T,H,B)=(50.58878pt, 743.8693pt, 50.58878pt)
+* h-part:(L,W,R)=(57.81621pt, 481.87546pt, 57.81621pt)
+* v-part:(T,H,B)=(57.81621pt, 729.41443pt, 57.81621pt)
 * \paperwidth=597.50787pt
 * \paperheight=845.04684pt
-* \textwidth=496.33032pt
-* \textheight=743.8693pt
-* \oddsidemargin=-21.68121pt
-* \evensidemargin=-21.68121pt
-* \topmargin=-58.68121pt
+* \textwidth=481.87546pt
+* \textheight=729.41443pt
+* \oddsidemargin=-14.45378pt
+* \evensidemargin=-14.45378pt
+* \topmargin=-51.45378pt
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=10.0pt
@@ -368,16 +391,16 @@ LaTeX Font Info:    ... okay on input line 17.
 
 (/usr/local/texlive/2025basic/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count299
-\scratchdimen=\dimen165
+\scratchcounter=\count303
+\scratchdimen=\dimen178
 \scratchbox=\box57
-\nofMPsegments=\count300
-\nofMParguments=\count301
+\nofMPsegments=\count304
+\nofMParguments=\count305
 \everyMPshowfont=\toks29
-\MPscratchCnt=\count302
-\MPscratchDim=\dimen166
-\MPnumerator=\count303
-\makeMPintoPDFobject=\count304
+\MPscratchCnt=\count306
+\MPscratchDim=\dimen179
+\MPnumerator=\count307
+\makeMPintoPDFobject=\count308
 \everyMPtoPDFconversion=\toks30
 )
 (/usr/local/texlive/2025basic/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.s
@@ -390,7 +413,7 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
-Package hyperref Info: Link coloring OFF on input line 17.
+Package hyperref Info: Link coloring OFF on input line 20.
  (output/InsightAI_Final_Report.out) (output/InsightAI_Final_Report.out)
 \@outlinefile=\write3
 \openout3 = `InsightAI_Final_Report.out'.
@@ -400,12 +423,12 @@ Package hyperref Info: Link coloring OFF on input line 17.
 [1
 
 {/usr/local/texlive/2025basic/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-<plots/plot_1_ghost_exorcism.png, id=75, 578.16pt x 361.35pt>
+<plots/plot_1_ghost_exorcism.png, id=103, 578.16pt x 361.35pt>
 File: plots/plot_1_ghost_exorcism.png Graphic file (type png)
 <use plots/plot_1_ghost_exorcism.png>
-Package pdftex.def Info: plots/plot_1_ghost_exorcism.png  used on input line 52
+Package pdftex.def Info: plots/plot_1_ghost_exorcism.png  used on input line 61
 .
-(pdftex.def)             Requested size: 272.98318pt x 170.61195pt.
+(pdftex.def)             Requested size: 192.74724pt x 120.4644pt.
 
 
 
@@ -414,94 +437,146 @@ been already used, duplicate ignored
 <to be read again> 
                    \relax 
 l.65 
-      [1 <output/plots/plot_1_ghost_exorcism.png>]
-<plots/plot_2_spatial_hotspots.png, id=86, 462.528pt x 346.896pt>
+      [1]
+
+[2 <output/plots/plot_1_ghost_exorcism.png>]
+<plots/plot_2_spatial_hotspots.png, id=121, 462.528pt x 346.896pt>
 File: plots/plot_2_spatial_hotspots.png Graphic file (type png)
 <use plots/plot_2_spatial_hotspots.png>
 Package pdftex.def Info: plots/plot_2_spatial_hotspots.png  used on input line 
-90.
-(pdftex.def)             Requested size: 272.98318pt x 204.74625pt.
+105.
+(pdftex.def)             Requested size: 192.74724pt x 144.56258pt.
 
 
-[2]
-<plots/plot_5_elbow_method.png, id=92, 578.16pt x 361.35pt>
+[3]
+<plots/plot_5_elbow_method.png, id=130, 578.16pt x 361.35pt>
 File: plots/plot_5_elbow_method.png Graphic file (type png)
 <use plots/plot_5_elbow_method.png>
-Package pdftex.def Info: plots/plot_5_elbow_method.png  used on input line 104.
+Package pdftex.def Info: plots/plot_5_elbow_method.png  used on input line 119.
 
-(pdftex.def)             Requested size: 248.16516pt x 155.10178pt.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 109.
+(pdftex.def)             Requested size: 202.3868pt x 126.49094pt.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 109.
+(hyperref)                removing `math shift' on input line 124.
 
-<plots/plot_3_feature_importance.png, id=93, 722.7pt x 433.62pt>
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 124.
+
+
+
+[4 <output/plots/plot_2_spatial_hotspots.png> <output/plots/plot_5_elbow_method
+.png>]
+<plots/plot_8_selection_bias.png, id=142, 578.16pt x 361.35pt>
+File: plots/plot_8_selection_bias.png Graphic file (type png)
+<use plots/plot_8_selection_bias.png>
+Package pdftex.def Info: plots/plot_8_selection_bias.png  used on input line 13
+3.
+(pdftex.def)             Requested size: 231.29816pt x 144.5595pt.
+<plots/plot_3_feature_importance.png, id=143, 722.7pt x 433.62pt>
 File: plots/plot_3_feature_importance.png Graphic file (type png)
 <use plots/plot_3_feature_importance.png>
 Package pdftex.def Info: plots/plot_3_feature_importance.png  used on input lin
-e 116.
-(pdftex.def)             Requested size: 272.98318pt x 163.79144pt.
-
-
-[3 <output/plots/plot_2_spatial_hotspots.png> <output/plots/plot_5_elbow_method
-.png>]
-<plots/plot_4_scatter_unconstrained.png, id=106, 578.16pt x 433.62pt>
+e 139.
+(pdftex.def)             Requested size: 231.29816pt x 138.77446pt.
+<plots/plot_4_scatter_unconstrained.png, id=144, 578.16pt x 433.62pt>
 File: plots/plot_4_scatter_unconstrained.png Graphic file (type png)
 <use plots/plot_4_scatter_unconstrained.png>
 Package pdftex.def Info: plots/plot_4_scatter_unconstrained.png  used on input 
-line 128.
-(pdftex.def)             Requested size: 272.98318pt x 204.73434pt.
+line 170.
+(pdftex.def)             Requested size: 231.29816pt x 173.47139pt.
 
 
-[4 <output/plots/plot_3_feature_importance.png> <output/plots/plot_4_scatter_un
-constrained.png>]
-<../reports/figures/cluster_pca.png, id=116, 722.7pt x 433.62pt>
-File: ../reports/figures/cluster_pca.png Graphic file (type png)
-<use ../reports/figures/cluster_pca.png>
-Package pdftex.def Info: ../reports/figures/cluster_pca.png  used on input line
- 157.
-(pdftex.def)             Requested size: 248.16516pt x 148.8977pt.
+[5 <output/plots/plot_8_selection_bias.png> <output/plots/plot_3_feature_import
+ance.png>]
+
+[6 <output/plots/plot_4_scatter_unconstrained.png>]
+<plots/plot_6_budget_allocation.png, id=162, 650.43pt x 361.35pt>
+File: plots/plot_6_budget_allocation.png Graphic file (type png)
+<use plots/plot_6_budget_allocation.png>
+Package pdftex.def Info: plots/plot_6_budget_allocation.png  used on input line
+ 233.
+(pdftex.def)             Requested size: 231.29816pt x 128.49794pt.
+<plots/plot_7_roi_yield.png, id=163, 650.43pt x 361.35pt>
+File: plots/plot_7_roi_yield.png Graphic file (type png)
+<use plots/plot_7_roi_yield.png>
+Package pdftex.def Info: plots/plot_7_roi_yield.png  used on input line 238.
+(pdftex.def)             Requested size: 231.29816pt x 128.49794pt.
 
 
-[5 <output/../reports/figures/cluster_pca.png>]
-(output/InsightAI_Final_Report.aux)
+[7 <output/plots/plot_6_budget_allocation.png> <output/plots/plot_7_roi_yield.p
+ng>]
+<plots/dashboard_kpi.png, id=175, 1439.3775pt x 745.78625pt>
+File: plots/dashboard_kpi.png Graphic file (type png)
+<use plots/dashboard_kpi.png>
+Package pdftex.def Info: plots/dashboard_kpi.png  used on input line 266.
+(pdftex.def)             Requested size: 231.29816pt x 119.84032pt.
+<plots/dashboard_xai.png, id=176, 1270.7475pt x 792.9625pt>
+File: plots/dashboard_xai.png Graphic file (type png)
+<use plots/dashboard_xai.png>
+Package pdftex.def Info: plots/dashboard_xai.png  used on input line 271.
+(pdftex.def)             Requested size: 231.29816pt x 144.32423pt.
+
+Underfull \hbox (badness 2173) in paragraph at lines 291--291
+[]\OT1/cmr/bx/n/7 2. MILP Op-ti-miza-tion &
+ []
+
+
+Underfull \hbox (badness 1466) in paragraph at lines 307--307
+[]\OT1/cmr/bx/n/7 6. Math-e-mat-i-cal Mod-el-ing
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 311--311
+[]\OT1/cmr/bx/n/7 7. Busi-ness Con-straints
+ []
+
+
+
+[8 <output/plots/dashboard_kpi.png> <output/plots/dashboard_xai.png>]
+
+[9] (output/InsightAI_Final_Report.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
 Package rerunfilecheck Info: File `InsightAI_Final_Report.out' has not changed.
 
-(rerunfilecheck)             Checksum: AAB5D6C9737F800D2184798865911295;4262.
+(rerunfilecheck)             Checksum: 8DC3AF19969397DDD38D30A72CD7A394;6918.
  ) 
 Here is how much of TeX's memory you used:
- 10167 strings out of 474662
- 159505 string characters out of 5751109
- 566022 words of memory out of 5000000
- 33073 multiletter control sequences out of 15000+600000
- 565685 words of font info for 60 fonts, out of 8000000 for 9000
+ 10355 strings out of 474662
+ 163190 string characters out of 5751109
+ 573103 words of memory out of 5000000
+ 33232 multiletter control sequences out of 15000+600000
+ 566163 words of font info for 62 fonts, out of 8000000 for 9000
  319 hyphenation exceptions out of 8191
- 75i,12n,79p,945b,485s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,13n,79p,1280b,501s stack positions out of 10000i,1000n,20000p,200000b,200000s
  </Users/k.e.oshada/Library/texlive/2025basic/texmf-var/fonts/pk/ljfour/jknap
 pen/ec/tcrm1000.600pk></usr/local/texlive/2025basic/texmf-dist/fonts/type1/publ
 ic/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2025basic/texmf-dist/fonts/type1/
 public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2025basic/texmf-dist/fonts/ty
-pe1/public/amsfonts/cm/cmbx8.pfb></usr/local/texlive/2025basic/texmf-dist/fonts
-/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2025basic/texmf-dist/f
-onts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2025basic/texmf-di
-st/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2025basic/texmf
--dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2025basic/te
-xmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2025basic/
-texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2025basi
-c/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2025
-basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on output/InsightAI_Final_Report.pdf (6 pages, 1161247 bytes).
+pe1/public/amsfonts/cm/cmbx7.pfb></usr/local/texlive/2025basic/texmf-dist/fonts
+/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2025basic/texmf-dist/f
+onts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2025basic/texmf-di
+st/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2025basic/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/local/texlive/2025basic/t
+exmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2025basi
+c/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2025b
+asic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/20
+25basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/
+2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texliv
+e/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/te
+xlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local
+/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/l
+ocal/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></u
+sr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb>
+
+Output written on output/InsightAI_Final_Report.pdf (10 pages, 4721133 bytes).
 PDF statistics:
- 182 PDF objects out of 1000 (max. 8388607)
- 137 compressed objects within 2 object streams
- 28 named destinations out of 1000 (max. 500000)
- 159 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 280 PDF objects out of 1000 (max. 8388607)
+ 210 compressed objects within 3 object streams
+ 47 named destinations out of 1000 (max. 500000)
+ 235 words of extra memory for PDF output out of 10000 (max. 10000000)
 

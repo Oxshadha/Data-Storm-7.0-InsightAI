@@ -70,9 +70,11 @@ def run_predict(config: dict) -> None:
     
     from src.model.baseline_kmeans import run_baseline_model
     from src.model.lgbm_quantile import run_lgbm_model
+    from src.gold.spend_optimizer import run_spend_optimizer
     
     run_baseline_model(config)
     run_lgbm_model(config)
+    run_spend_optimizer(config)
 
 
 STAGES = {

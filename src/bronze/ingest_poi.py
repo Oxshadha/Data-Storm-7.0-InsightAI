@@ -56,11 +56,27 @@ def scrape_pois(config: dict | None = None) -> Path:
         WHERE bbox.xmin BETWEEN {lon_min} AND {lon_max}
           AND bbox.ymin BETWEEN {lat_min} AND {lat_max}
           AND categories.primary IN (
-              'school', 'university', 'college', 'education', 
-              'hospital', 'bus_stop', 'place_of_worship',
+              -- Education / Youth
+              'school', 'college_university', 'education', 'preschool',
+              'educational_services',
+              -- Health
+              'hospital',
+              -- Transit
+              'bus_station', 'train_station', 'transportation', 'gas_station',
+              -- Religious (major Sri Lankan footfall drivers)
+              'buddhist_temple', 'hindu_temple', 'mosque',
+              'church_cathedral', 'catholic_church',
+              -- Competitors (beverage sellers)
               'restaurant', 'cafe', 'convenience_store', 'supermarket',
-              'park', 'tourist_attraction', 'landmark', 'beach',
-              'stadium', 'sports_centre', 'pitch', 'recreation_center'
+              'grocery_store', 'hotel', 'bakery', 'accommodation', 'resort', 'bar',
+              -- Leisure / Tourist
+              'park', 'beach', 'playground', 'national_park',
+              'landmark_and_historical_building',
+              -- Athletic / Sports
+              'gym', 'stadium_arena', 'sports_club_and_league',
+              'cricket_ground', 'sports_and_recreation_venue',
+              -- Niche
+              'liquor_store'
           )
     ) TO '{str(output_path)}' (FORMAT PARQUET);
     """

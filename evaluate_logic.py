@@ -35,7 +35,7 @@ if len(censored) > 0:
 print(f"\n3. CLUSTER OPTIMIZATION CHECK:")
 feature_cols = [
     "poi_total_catchment", "Tuition_Weekend_Surge", "Tourist_Peak_Multiplier", 
-    "Sports_Big_Match_Spike", "Park_Poya_Outing", "Number_of_Weekends", "Holiday_Count"
+    "Sports_Big_Match_Spike", "Number_of_Weekends", "Holiday_Count"
 ]
 sample_X = abt[feature_cols].fillna(0).sample(min(10000, len(abt)), random_state=42)
 scaler = StandardScaler()
