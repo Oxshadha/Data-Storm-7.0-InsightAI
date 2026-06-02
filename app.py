@@ -125,9 +125,11 @@ if "allocations" not in st.session_state:
     st.session_state.allocations = None
 if "live_solve_mode" not in st.session_state:
     st.session_state.live_solve_mode = False
+if "live_sensitivity_pct" not in st.session_state:
+    st.session_state.live_sensitivity_pct = 0
 
 # ── Load and Merge Datasets ─────────────────────────────────────────────
-@st.cache_data(ttl=5)
+@st.cache_data
 def load_dashboard_data():
     # Load base model inputs
     abt = pd.read_parquet("data/gold/model_input.parquet")
@@ -177,25 +179,21 @@ except Exception as e:
     st.error(f"Error loading datasets: {e}. Please ensure you run the pipeline stages first.")
     st.stop()
 
-# ── Apply Allocations (Pre-computed or Live) ────────────────────────────
-def get_allocations():
-    if st.session_state.live_solve_mode and st.session_state.allocations is not None:
-        return st.session_state.allocations
-    else:
-        # Load pre-computed
-        allocs = pd.read_csv("output/insightai_budget_allocations.csv")
-        allocs = allocs.rename(columns={"Trade Spend Allocation (LKR)": "Trade_Spend_Allocation"})
-        return allocs
+# ── Apply Allocations ────────────────────────────
+allocations_df = pd.read_csv("output/insightai_budget_allocations.csv")
+allocations_df = allocations_df.rename(columns={"Trade Spend Allocation (LKR)": "Trade_Spend_Allocation"})
 
-allocations_df = get_allocations()
+if st.session_state.live_solve_mode and st.session_state.allocations is not None:
+    allocations_df = st.session_state.allocations
+
 # Merge allocations into the main df
 if "Trade_Spend_Allocation" in df.columns:
     df = df.drop(columns=["Trade_Spend_Allocation"])
 df = df.merge(allocations_df, on="Outlet_ID", how="left")
 df["Trade_Spend_Allocation"] = df["Trade_Spend_Allocation"].fillna(0.0)
 
-print("DEBUG: Total allocations_df sum =", allocations_df["Trade_Spend_Allocation"].sum())
-print("DEBUG: Total df sum after merge =", df["Trade_Spend_Allocation"].sum())
+# Apply global sensitivity shock based on current state
+df["Volume_Lift"] = df["Raw_Volume_Lift"] * (1 + (st.session_state.live_sensitivity_pct / 100.0))
 
 # ── Sidebar Filters ─────────────────────────────────────────────────────
 st.sidebar.image("https://img.icons8.com/nolan/96/artificial-intelligence.png", width=64)
@@ -217,18 +215,83 @@ selected_distributor = st.sidebar.multiselect(
 
 funded_only = st.sidebar.checkbox("Show Only Funded Outlets", value=False)
 
-st.sidebar.subheader("Model Validation")
-sensitivity_pct = st.sidebar.slider(
-    "Prediction Sensitivity (±%)", 
-    min_value=-20, max_value=20, value=0, step=5,
-    help="Stress-test the budget allocations. If the model is 20% too optimistic, what happens to the ROI?"
-)
-
-# Apply Sensitivity Shock
-if sensitivity_pct != 0:
-    df["Volume_Lift"] = df["Raw_Volume_Lift"] * (1 + (sensitivity_pct / 100.0))
-
-# Tier Definitions
+# Executive Stress-Test Engine
+with st.sidebar.expander(":material/monitoring: Executive Stress-Test Engine", expanded=False):
+    st.markdown("**Run Scenario Simulation**")
+    st.markdown("<small style='color:#94a3b8;'>Simulate an economic downturn or budget cut to see how the AI re-routes funds to safer bets.</small>", unsafe_allow_html=True)
+    
+    with st.form("scenario_form"):
+        optim_budget_m = st.slider("Total Budget Constraint (LKR)", min_value=1.0, max_value=10.0, value=5.0, step=0.5, format="%.1fM")
+        sensitivity_slider = st.slider("Demand Sensitivity (±%)", min_value=-20, max_value=20, value=0, step=5)
+        submitted = st.form_submit_button("Run Simulation", use_container_width=True)
+    
+    if submitted:
+        optim_budget = int(optim_budget_m * 1_000_000)
+        with st.spinner("Re-allocating MILP Knapsack..."):
+            from ortools.linear_solver import pywraplp
+            
+            wp_outlets = df[df["Province"] == "Western"].copy()
+            wp_outlets["Volume_Lift"] = wp_outlets["Raw_Volume_Lift"] * (1 + (sensitivity_slider / 100.0))
+            
+            def assign_tier(row):
+                cooler = float(row.get("Cooler_Count", 0.0))
+                lift = float(row.get("Volume_Lift", 0.0))
+                if cooler == 0 and lift > 500: return 90000
+                elif cooler >= 3 or (cooler == 0 and lift <= 500): return 15000
+                else: return 40000
+                
+            wp_outlets["investment_cost"] = wp_outlets.apply(assign_tier, axis=1)
+            candidates = wp_outlets[wp_outlets["Volume_Lift"] > 10.0].copy().reset_index(drop=True)
+            
+            solver = pywraplp.Solver.CreateSolver("SCIP")
+            if not solver:
+                solver = pywraplp.Solver.CreateSolver("CBC")
+            solver.SetTimeLimit(5000)
+            variables = {}
+            for idx, row in candidates.iterrows():
+                variables[idx] = solver.IntVar(0, 1, f"x_{idx}")
+                
+            solver.Add(solver.Sum([variables[idx] * int(row["investment_cost"]) for idx, row in candidates.iterrows()]) <= optim_budget)
+            
+            min_spend = optim_budget * 0.20
+            for dist in candidates["Distributor_ID"].unique():
+                dist_shops = candidates[candidates["Distributor_ID"] == dist]
+                if not dist_shops.empty:
+                    solver.Add(solver.Sum([variables[idx] * int(row["investment_cost"]) for idx, row in dist_shops.iterrows()]) >= min_spend)
+            
+            t1_shops = candidates[candidates["investment_cost"] == 90000]
+            t2_shops = candidates[candidates["investment_cost"] == 40000]
+            if not t1_shops.empty:
+                solver.Add(solver.Sum([variables[idx] for idx, row in t1_shops.iterrows()]) >= 10)
+            if not t2_shops.empty:
+                solver.Add(solver.Sum([variables[idx] for idx, row in t2_shops.iterrows()]) >= 20)
+            
+            objective = solver.Objective()
+            for idx, row in candidates.iterrows():
+                mult = 1.2 if row["is_isolated_goldmine"] == 1 else 1.0
+                objective.SetCoefficient(variables[idx], float(row["Volume_Lift"] * mult))
+            objective.SetMaximization()
+            
+            solver.Solve()
+            
+            candidates["Trade_Spend_Allocation"] = [int(variables[idx].solution_value()) * candidates.iloc[idx]["investment_cost"] for idx in range(len(candidates))]
+            
+            new_alloc = candidates[["Outlet_ID", "Trade_Spend_Allocation"]]
+            full_alloc = df[["Outlet_ID"]].merge(new_alloc, on="Outlet_ID", how="left").fillna(0)
+            
+            st.session_state.allocations = full_alloc
+            st.session_state.live_solve_mode = True
+            st.session_state.live_sensitivity_pct = sensitivity_slider
+            st.session_state.live_budget_m = optim_budget_m
+            st.rerun()
+            
+    if st.session_state.live_solve_mode:
+        current_budget = st.session_state.get('live_budget_m', 5.0)
+        st.success(f"Viewing Simulation (Budget: {current_budget}M, Shock: {st.session_state.live_sensitivity_pct}%)")
+        if st.button("Reset to Baseline", use_container_width=True):
+            st.session_state.live_solve_mode = False
+            st.session_state.live_sensitivity_pct = 0
+            st.rerun()# Tier Definitions
 with st.sidebar.expander(":material/category: Dynamic Tier Definitions", expanded=False):
     st.markdown("""
     **Network Classification:**
@@ -238,84 +301,7 @@ with st.sidebar.expander(":material/category: Dynamic Tier Definitions", expande
     * **Tier 4 (Small):** Bottom 30% of network. Niche or constrained shops.
     """)
 
-# Live Scenario Planning Expander
-with st.sidebar.expander(":material/build: Live Scenario Planning", expanded=False):
-    st.markdown("Run MILP solver dynamically to adjust budgets.")
-    optim_budget_m = st.slider("Total Budget (LKR)", min_value=1.0, max_value=10.0, value=5.0, step=0.5, format="%.1fM")
-    optim_budget = int(optim_budget_m * 1_000_000)
-    
-    if st.button("Re-solve MILP", use_container_width=True):
-        with st.spinner("Solving MILP Knapsack Problem (~4.5s)..."):
-            from ortools.linear_solver import pywraplp
-            
-            # Re-implement a fast, constrained MILP for the dashboard
-            # Filter to candidates
-            wp_outlets = df[df["Province"] == "Western"].copy()
-            
-            def assign_tier(row):
-                cooler = float(row.get("Cooler_Count", 0.0))
-                lift = float(row.get("Volume_Lift", 0.0))
-                
-                if cooler == 0 and lift > 500: return 90000
-                elif cooler >= 3 or (cooler == 0 and lift <= 500): return 15000
-                else: return 40000
-                
-            wp_outlets["investment_cost"] = wp_outlets.apply(assign_tier, axis=1)
-            candidates = wp_outlets[wp_outlets["Volume_Lift"] > 10.0].copy().reset_index(drop=True)
-            
-            solver = pywraplp.Solver.CreateSolver("SCIP")
-            variables = {}
-            for idx, row in candidates.iterrows():
-                variables[idx] = solver.IntVar(0, 1, f"x_{idx}")
-                
-            # Budget constraint
-            solver.Add(solver.Sum([variables[idx] * int(row["investment_cost"]) for idx, row in candidates.iterrows()]) <= optim_budget)
-            
-            # Geographic constraint (Save Colombo)
-            min_spend = optim_budget * 0.20 # Force at least 20% of budget into each of the 3 distributors
-            for dist in candidates["Distributor_ID"].unique():
-                dist_shops = candidates[candidates["Distributor_ID"] == dist]
-                if not dist_shops.empty:
-                    solver.Add(solver.Sum([variables[idx] * int(row["investment_cost"]) for idx, row in dist_shops.iterrows()]) >= min_spend)
-            
-            # Force Tier Diversity
-            t1_shops = candidates[candidates["investment_cost"] == 90000]
-            t2_shops = candidates[candidates["investment_cost"] == 40000]
-            if not t1_shops.empty:
-                solver.Add(solver.Sum([variables[idx] for idx, row in t1_shops.iterrows()]) >= 10)
-            if not t2_shops.empty:
-                solver.Add(solver.Sum([variables[idx] for idx, row in t2_shops.iterrows()]) >= 20)
-            
-            # Anti-cannibalization (simplified for UI speed - randomly exclude some if near)
-            # In production, use cKDTree here as well
-            
-            # Objective
-            objective = solver.Objective()
-            for idx, row in candidates.iterrows():
-                mult = 1.2 if row["is_isolated_goldmine"] == 1 else 1.0
-                objective.SetCoefficient(variables[idx], float(row["Volume_Lift"] * mult))
-            objective.SetMaximization()
-            
-            solver.Solve()
-            
-            # Extract
-            candidates["Trade_Spend_Allocation"] = [int(variables[idx].solution_value()) * candidates.iloc[idx]["investment_cost"] for idx in range(len(candidates))]
-            
-            # Update state
-            new_alloc = candidates[["Outlet_ID", "Trade_Spend_Allocation"]]
-            full_alloc = df[["Outlet_ID"]].merge(new_alloc, on="Outlet_ID", how="left").fillna(0)
-            
-            st.session_state.allocations = full_alloc
-            st.session_state.live_solve_mode = True
-            st.rerun()
-            
-    if st.session_state.live_solve_mode:
-        st.success("Using live custom allocation.")
-        if st.button("Reset to Default (5M)", use_container_width=True):
-            st.session_state.live_solve_mode = False
-            st.rerun()
-    else:
-        st.info("Using pre-computed 5M LKR allocation.")
+
 
 # Apply filters
 filtered_df = df[
@@ -341,11 +327,31 @@ avg_roi = (total_lift / (total_spend / 1000)) if total_spend > 0 else 0
 total_revenue = total_lift * 250  # Assuming 250 LKR / Liter
 payback_months = (total_spend / total_revenue) if total_revenue > 0 else 0
 
-kpi1.metric("Budget Deployed", f"LKR {total_spend/1e6:.1f}M")
-kpi2.metric("Total Volume Lift", f"{total_lift:,.0f} L")
-kpi3.metric("Est. Monthly Revenue", f"LKR {total_revenue/1e6:.1f}M", help="Assuming standard 250 LKR unit price per liter.")
+# Baseline comparison
+base_allocs = pd.read_csv("output/insightai_budget_allocations.csv")
+base_allocs = base_allocs.rename(columns={"Trade Spend Allocation (LKR)": "Base_Allocation"})
+comp_df = filtered_df[["Outlet_ID", "Raw_Volume_Lift"]].merge(base_allocs, on="Outlet_ID", how="left")
+comp_df["Base_Allocation"] = comp_df["Base_Allocation"].fillna(0.0)
+
+base_spend = comp_df["Base_Allocation"].sum()
+base_lift = comp_df[comp_df["Base_Allocation"] > 0]["Raw_Volume_Lift"].sum()
+base_funded = (comp_df["Base_Allocation"] > 0).sum()
+base_revenue = base_lift * 250
+
+def format_delta(current, base, is_currency=False):
+    d = current - base
+    if abs(d) < 0.01: return None
+    sign = "+" if d > 0 else "-"
+    if is_currency:
+        return f"{sign}{abs(d)/1e6:.1f}M"
+    else:
+        return f"{sign}{abs(d):,.0f}"
+
+kpi1.metric("Budget Deployed", f"LKR {total_spend/1e6:.1f}M", delta=format_delta(total_spend, base_spend, True), delta_color="off")
+kpi2.metric("Total Volume Lift", f"{total_lift:,.0f} L", delta=format_delta(total_lift, base_lift))
+kpi3.metric("Est. Monthly Revenue", f"LKR {total_revenue/1e6:.1f}M", delta=format_delta(total_revenue, base_revenue, True), help="Assuming standard 250 LKR unit price per liter.")
 kpi4.metric("Payback Period", f"{payback_months:.1f} Months", help="Months to break even on the Trade Spend investment.")
-kpi5.metric("Outlets Funded", f"{total_funded:,}")
+kpi5.metric("Outlets Funded", f"{total_funded:,}", delta=format_delta(total_funded, base_funded))
 
 # ── Tabs ────────────────────────────────────────────────────────────────
 tab1, tab2 = st.tabs(["Strategy & Execution", "Technical Analytics"])
