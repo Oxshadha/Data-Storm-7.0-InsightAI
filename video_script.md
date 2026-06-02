@@ -25,56 +25,65 @@ To solve this, we built a Spatio-Temporal Framework using Overture Maps and Quan
 "At the top, our KPI ribbon provides the executive summary of our 5 Million LKR budget deployment. We don't just show volume; we translate it into financial impact. 
 
 How does the math work? 
-Our **Estimated Monthly Revenue** is calculated by taking the AI-predicted Volume Lift and multiplying it by an average gross margin of 100 Rupees per liter. 
+Our **Estimated Monthly Revenue** is calculated by taking the AI-predicted Volume Lift and multiplying it by an assumed standard unit price of 250 Rupees per liter. 
 Our **Payback Period** is calculated by simply dividing the Total Budget Deployed by that Monthly Revenue. In this baseline scenario, our optimization strategy pays for itself in exactly 1.6 months, proving extreme capital efficiency."
 
 ---
 
-## 🗺️ 3. The Map & Business Strategy (1:15 - 2:00)
-**Visual:** *Cursor moves over the PyDeck map, then scrolls to the Waterfall and ROI charts.*
+## 🗺️ 3. The Map & Business Strategy (1:15 - 2:15)
+**Visual:** *Cursor moves over the PyDeck map, then scrolls through the 6 Business Strategy charts.*
 
 **Script:**
 "The centerpiece of our execution is the Strategic Investment Map. 
-The **gray dots** represent the unconstrained potential of the entire network. The **large green nodes** are the specific outlets our MILP algorithm selected for funding. Notice the **red rings** around them—these represent a strict 500-meter exclusion radius. Our algorithm mathematically prevents funding multiple outlets within the same catchment area, entirely eliminating self-cannibalization.
+The **gray dots** represent the unconstrained potential of the entire network. The **large green nodes** are the specific outlets our MILP algorithm selected for funding. The **red rings** around them represent a strict 500-meter exclusion radius, mathematically preventing self-cannibalization.
 
-Scrolling down, we have our **Budget Allocation Waterfall**. This breaks down the 5 Million LKR across three strategic tiers: 15K POSM micro-investments for isolated regions, 40K visibility upgrades, and 90K core asset injections for high-traffic hubs. Beside it, the ROI Comparison chart proves that our algorithm heavily favors the 15K and 40K tiers because they yield the highest marginal return per rupee spent."
-
+Scrolling down, we present exactly *how* the budget was optimized across 6 key strategic views:
+1. **Budget Allocation Waterfall**: Breaks down the 5M LKR across our 15K, 40K, and 90K tiers.
+2. **ROI Comparison by Package**: Proves that 15K and 40K tiers yield the highest marginal return per rupee.
+3. **Strategic ROI**: This bar chart confirms our funded outlets achieve massively higher average volume lifts than unfunded ones.
+4. **Outlet Potential Distribution**: The box plot visually proves the algorithm successfully shifted funding rightward into the highest-potential segment.
+5. **Spend Distribution by Hub**: Shows exactly which distributor regions receive the capital injection.
+6. **Targeted Expansion**: This pie chart highlights that we balance 85% of our budget on Strategic Urban Hubs while carving out 15% to capture high-margin Isolated Goldmines."
 ---
 
-## 🎛️ 4. The Executive Stress-Test Engine (2:00 - 3:15)
-**Visual:** *Cursor moves to the left sidebar. Adjusts the Budget slider to 3M and Demand Sensitivity to -10%. Clicks 'Run Simulation'.*
+## 🎛️ 4. The Executive Stress-Test Engine (2:15 - 3:30)
+**Visual:** *Cursor moves to the left sidebar. Clicks the 'Province' dropdown to demonstrate regional filtering. Then, adjusts the Budget slider to 3M and Demand Sensitivity to -10%. Clicks 'Run Simulation'.*
 
 **Script:**
-"Our sidebar allows regional managers to filter strategies by Province or specific Distributors. But the true power of this dashboard is the **Executive Stress-Test Engine**.
+"Our sidebar allows regional managers to filter strategies down to specific Provinces or Distributors. But the true power of this dashboard is the **Executive Stress-Test Engine**.
 
 Business environments change rapidly. What if headquarters slashes our budget from 5 Million to 3 Million? And what if a macro-economic shock drops consumer demand by 10%? 
 
-By adjusting these sliders and clicking *Run Simulation*, the dashboard doesn't just filter data—it triggers a live, in-browser recalculation of the MILP Knapsack solver. 
+By adjusting these sliders and clicking *Run Simulation*, the dashboard doesn't just filter data—it triggers a live, in-browser recalculation of the **MILP Knapsack** solver. 
 Look at the KPI ribbon—it now displays red and green deltas, instantly quantifying our volume loss. Notice how the Map dynamically redraws, and the Waterfall chart shifts its strategy. The AI has instantly retreated to a defensive posture, abandoning high-risk 90K assets to protect our core 15K and 40K high-ROI monopolies."
 
 ---
 
-## 🤖 5. Generative AI Drill-Down (3:15 - 4:30)
-**Visual:** *Scrolls to the XAI Drill-Down panel. Types an outlet ID for a 90K funded outlet, then searches for a 15K funded outlet.*
+## 🤖 5. Generative AI Drill-Down (3:30 - 4:45)
+**Visual:** *Scrolls to the XAI Drill-Down panel. Highlights the Bullet Gauge and Radar Chart. Types an outlet ID for a 90K outlet, then a 15K outlet.*
 
 **Script:**
-"For field sales managers, we need to explain *why* specific outlets get funding. Our XAI Drill-Down panel provides complete transparency.
+"A major challenge with AI is adoption by non-technical people. A field sales rep doesn't understand what a 'MILP Knapsack solver' is—they just need to know *why* a shop got funded. Our XAI panel solves this.
 
-If we search for a **90K Tier Outlet**, look at the Radar Chart. We normalized the axes into Percentile Ranks (0 to 100). The dashed grey circle is the 50th percentile network median. The orange polygon is this outlet. You can see massive spikes breaking outside the grey circle in 'Transit' and 'Youth' demographics. 
+When we select an outlet, the **Bullet Gauge** immediately compares its historical volume limit against its newly predicted True Potential, showing exactly how much growth we expect.
 
-If we switch to a **15K Tier Outlet**, the polygon shrinks inside the grey line—it has low absolute footfall. Why was it funded? Read the Generative AI brief on the left, powered by Google Gemini. It reads the mathematical context and explains that this outlet is an 'Isolated Goldmine'—it may have low traffic, but it holds a 100% monopoly over its local radius, making it a high-ROI target. Gemini automatically translates our MILP logic into a human sales pitch."
+If we search for a **90K Tier Outlet**, look at the **Radar Chart**. We normalized the axes into Percentile Ranks (0 to 100). The dashed grey circle is the 50th percentile network median. This outlet's orange polygon spikes massively outside the grey circle in 'Transit' and 'Youth' demographics. 
+
+If we switch to a **15K Tier Outlet**, the polygon shrinks inside the grey line—it has low absolute footfall. Why was it funded? Look at the Generative AI brief on the left, powered by Google Gemini. It explains that this outlet is an 'Isolated Goldmine'—it may have low traffic, but it holds a 100% monopoly over its local radius. Gemini automatically translates our complex MILP logic directly into a simple, human sales pitch."
 
 ---
 
-## 🔬 6. Technical Analytics & Proof (4:30 - 6:00)
-**Visual:** *Clicks the 'Technical Analytics' tab. Scrolls through the 4 charts.*
+## 🔬 6. Technical Analytics & Proof (4:45 - 6:00)
+**Visual:** *Expands a 'Data Science Note' below a chart, then clicks the 'Technical Analytics' tab. Scrolls through the 4 charts.*
 
 **Script:**
-"Finally, for the judges evaluating our data science rigor, we present our Technical Analytics.
+"You may have noticed the collapsible **'Data Science Notes'** and **'Interactive Tips'** beneath our charts. We designed this UI to serve two personas perfectly: executives get a clean, high-level view, while data science judges can expand those notes to review our mathematical methodology.
+
+For ultimate technical proof, we built a dedicated Analytics tab:
 
 1. **Market Potential Decensoring:** This scatter plot plots historical sales against our AI's predicted potential. Notice the 45-degree identity line. Every dot floating above that line is visual proof that our Quantile Regressor successfully broke through historical distributor quotas to unlock latent demand.
 2. **Competitive Saturation:** This Empirical CDF plot proves our Cannibalization constraints. The red threshold line dynamically sits at the 85th percentile, mathematically proving exactly what portion of the network is hyper-competitive, which our MILP solver actively avoids.
-3. **The Cannibalization Paradox:** This scatter plot is our most counter-intuitive finding. The red OLS trendline clearly slopes downward. It statistically proves that as Spatial Driver Gravity (Urban Density) increases, potential volume actually drops due to hyper-competition. This justifies our strategy of funding rural monopolies.
+3. **The Cannibalization Paradox:** The red OLS trendline on this scatter plot clearly slopes downward. It statistically proves that as Urban Density increases, potential volume drops due to hyper-competition. This mathematically justifies funding rural monopolies.
 4. **Feature Importance:** Our LightGBM information gain chart confirms our entire philosophy—spatial catchment and temporal seasonality vastly outperform static master data.
 
 In 6 minutes, we've taken raw, constrained data, uncovered true demand, optimized it mathematically, and deployed it into a dynamic, executive-grade engine. Thank you for your time."
