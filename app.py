@@ -525,28 +525,29 @@ with tab1:
     with r2_col2:
         st.markdown("### Outlet Potential Distribution")
         filtered_df["Status"] = filtered_df["Trade_Spend_Allocation"].apply(lambda x: "Funded" if x > 0 else "Unfunded")
-        fig_dist = px.histogram(
+        
+        # Switched from Histogram to Box Plot to fix visibility issues of minority class
+        fig_dist = px.box(
             filtered_df, 
             x="Maximum_Monthly_Liters", 
+            y="Status",
             color="Status",
-            barmode="overlay",
             color_discrete_map={"Unfunded": "#475569", "Funded": "#10b981"},
-            nbins=50
+            orientation="h"
         )
         fig_dist.update_layout(
             xaxis_title="Predicted True Potential (Liters)",
-            yaxis_title="Count",
+            yaxis_title="",
             paper_bgcolor="rgba(0,0,0,0)", 
             plot_bgcolor="rgba(0,0,0,0)", 
             font_color="#e2e8f0",
-            legend_title="",
-            legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99),
+            showlegend=False,
             height=350,
             margin=dict(t=30, b=20, l=10, r=10)
         )
         st.plotly_chart(fig_dist, use_container_width=True)
         with st.expander(":material/lightbulb: How to read this chart"):
-            st.write("This histogram shows the distribution of predicted True Market Potential across the network. Notice how the green 'Funded' outlets are isolated across the long tail, proving the algorithm prioritizes pure ROI over sheer size.")
+            st.write("This Box Plot shows the spread of predicted True Market Potential across the network. Notice how the green 'Funded' box is shifted significantly to the right, proving the algorithm successfully targets the outlets with the highest growth potential.")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -592,6 +593,7 @@ with tab1:
                 gold_pct = 14.8
             st.write(f"**The Insight:** While pure mathematical optimization favors 'Isolated Goldmines' to avoid cannibalization, corporate supply chain rules dictate we must maintain dominance in our core urban markets. The algorithm successfully struck the perfect balance: dedicating {hubs_pct:.1f}% of the expansion to Strategic Urban Hubs (fulfilling distributor minimums), while aggressively carving out {gold_pct:.1f}% of the budget to capture untapped Isolated Goldmines at the provincial boundaries.")
 
+
 with tab2:
     st.markdown("### Model Validation & Technical Proof")
     
@@ -616,8 +618,10 @@ with tab2:
             labels={"Avg_Monthly_Volume": "Historical Average (Liters)", "Maximum_Monthly_Liters": "Predicted Potential (Liters)"}
         )
         # 45-degree line
+        # 45-degree line (Identity)
         max_val = filtered_df["Maximum_Monthly_Liters"].max()
-        fig_scatter.add_shape(type="line", x0=0, y0=0, x1=max_val, y1=max_val, line=dict(color="rgba(255,255,255,0.5)", dash="dash"))
+        fig_scatter.add_shape(type="line", x0=0, y0=0, x1=max_val, y1=max_val, line=dict(color="#10b981", width=2, dash="dash"))
+        fig_scatter.add_annotation(x=max_val*0.8, y=max_val*0.85, text="Latent Potential Unlocked &uarr;", showarrow=False, font=dict(color="#10b981", size=12))
         fig_scatter.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
         st.plotly_chart(fig_scatter, use_container_width=True)
         
@@ -627,14 +631,23 @@ with tab2:
         # Competitive Saturation
         st.markdown("### Density Distribution (Saturated Zones Only)")
         sat_df = filtered_df[filtered_df["competitive_saturation_index"] > 0]
-        fig_comp = px.histogram(sat_df, x="competitive_saturation_index", marginal="violin", color_discrete_sequence=["#8b5cf6"])
-        fig_comp.add_vline(x=0.05, line_dash="dash", line_color="#f87171", annotation_text="Saturated Region")
-        fig_comp.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
+        threshold_val = sat_df["competitive_saturation_index"].quantile(0.85)
+        fig_comp = px.ecdf(sat_df, x="competitive_saturation_index", color_discrete_sequence=["#8b5cf6"])
+        fig_comp.add_vline(x=threshold_val, line_dash="dash", line_color="#f87171", annotation_text="Threshold (Top 15% Saturated)")
+        fig_comp.add_hline(y=0.85, line_dash="dot", line_color="rgba(255,255,255,0.3)")
+        fig_comp.update_layout(
+            xaxis_title="Competitive Saturation Index",
+            yaxis_title="Cumulative Probability",
+            paper_bgcolor="rgba(0,0,0,0)", 
+            plot_bgcolor="rgba(0,0,0,0)", 
+            font_color="#e2e8f0",
+            margin=dict(t=30, b=20, l=10, r=10)
+        )
         st.plotly_chart(fig_comp, use_container_width=True)
         
         with st.expander(":material/science: Data Science Note: Competitive Saturation"):
             saturated_pct = (len(sat_df) / max(1, len(filtered_df))) * 100
-            st.write(f"**The Insight:** Approximately {saturated_pct:.1f}% of the network is operating in a competitive zone. The MILP optimizer actively avoids the red saturated region to prevent self-cannibalization and ensure high marginal ROI.")
+            st.write(f"**The Insight:** Approximately {saturated_pct:.1f}% of the network is operating in a competitive zone. The MILP optimizer actively avoids the red saturated region (the top 15% most hyper-competitive areas) to prevent self-cannibalization and ensure high marginal ROI.")
         
     with col2b:
         # Feature Importance
@@ -653,14 +666,15 @@ with tab2:
             st.write("**The Insight:** The model overwhelmingly prioritizes spatial catchment and temporal seasonality over static attributes. By leveraging LightGBM's non-linear tree structures, it dynamically cross-references these features to decode true localized market potential.")
 
         st.markdown("### The Cannibalization Paradox: Urban Dilution vs. Rural Monopolies")
+        sample_df = filtered_df.sample(min(2000, len(filtered_df)), random_state=42)
         fig_gravity = px.scatter(
-            filtered_df.sample(min(2000, len(filtered_df)), random_state=42),
+            sample_df,
             x="total_driver_gravity", y="Maximum_Monthly_Liters", color="Dynamic_Tier",
             color_discrete_sequence=["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"],
             labels={"total_driver_gravity": "Spatial Driver Gravity (Urban Density)", "Maximum_Monthly_Liters": "Predicted Potential (Liters)"},
-            opacity=0.7
+            opacity=0.8, trendline="ols", trendline_scope="overall", trendline_color_override="#f87171"
         )
-        fig_gravity.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
+        fig_gravity.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", margin=dict(t=30, b=20, l=10, r=10))
         st.plotly_chart(fig_gravity, use_container_width=True)
         
         with st.expander(":material/science: Data Science Note: The Cannibalization Paradox"):
@@ -779,14 +793,46 @@ if outlet_id in df["Outlet_ID"].values:
             
         # Single outlet radar
         if gravity_cols:
-            single_grav = [float(outlet_row.get(c, 0.0)) for c in gravity_cols]
-            avg_grav_all = df[gravity_cols].mean().values
+            # Normalize to percentiles (0 to 100)
+            single_pcts = []
+            for c in gravity_cols:
+                val = float(outlet_row.get(c, 0.0))
+                pct = (df[c] <= val).mean() * 100
+                single_pcts.append(pct)
+            
+            # The network average is exactly the 50th percentile by definition
+            avg_pcts = [50.0] * len(gravity_cols)
+            
+            # Format labels to remove "gravity_group_" and look cleaner
+            clean_labels = [c.replace("gravity_group_", "").title() for c in gravity_cols]
+            
+            # Explicitly close the polygon for Plotly
+            single_pcts.append(single_pcts[0])
+            avg_pcts.append(avg_pcts[0])
+            clean_labels.append(clean_labels[0])
             
             fig_radar_single = go.Figure()
-            fig_radar_single.add_trace(go.Scatterpolar(r=avg_grav_all, theta=gravity_cols, fill='toself', name='Network Average', marker_color="#475569"))
-            fig_radar_single.add_trace(go.Scatterpolar(r=single_grav, theta=gravity_cols, fill='toself', name='This Outlet', marker_color="#f59e0b"))
+            fig_radar_single.add_trace(go.Scatterpolar(
+                r=avg_pcts, theta=clean_labels, fill='none', name='Network Median (50%)',
+                line=dict(color="#94a3b8", width=2, dash="dash"), marker=dict(color="#94a3b8", size=6)
+            ))
+            fig_radar_single.add_trace(go.Scatterpolar(
+                r=single_pcts, theta=clean_labels, fill='toself', name='This Outlet',
+                line=dict(color="#f59e0b", width=3), marker=dict(color="#f59e0b", size=8), fillcolor="rgba(245, 158, 11, 0.4)"
+            ))
             fig_radar_single.update_layout(
-                polar=dict(radialaxis=dict(visible=False)), 
+                polar=dict(
+                    bgcolor="rgba(0,0,0,0)",
+                    radialaxis=dict(
+                        visible=True, range=[0, 100], tickvals=[25, 50, 75, 100], 
+                        ticktext=["25%", "50%", "75%", "100%"], 
+                        gridcolor="rgba(255,255,255,0.2)",
+                        tickfont=dict(color="#ffffff", size=13),
+                        angle=0,
+                        tickangle=0
+                    ),
+                    angularaxis=dict(gridcolor="rgba(255,255,255,0.2)", tickfont=dict(color="#e2e8f0", size=12))
+                ), 
                 paper_bgcolor="rgba(0,0,0,0)", 
                 plot_bgcolor="rgba(0,0,0,0)", 
                 font_color="#e2e8f0", 
