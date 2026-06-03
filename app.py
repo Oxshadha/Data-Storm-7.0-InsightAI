@@ -125,9 +125,11 @@ if "allocations" not in st.session_state:
     st.session_state.allocations = None
 if "live_solve_mode" not in st.session_state:
     st.session_state.live_solve_mode = False
+if "live_sensitivity_pct" not in st.session_state:
+    st.session_state.live_sensitivity_pct = 0
 
 # ── Load and Merge Datasets ─────────────────────────────────────────────
-@st.cache_data(ttl=5)
+@st.cache_data
 def load_dashboard_data():
     # Load base model inputs
     abt = pd.read_parquet("data/gold/model_input.parquet")
@@ -177,25 +179,21 @@ except Exception as e:
     st.error(f"Error loading datasets: {e}. Please ensure you run the pipeline stages first.")
     st.stop()
 
-# ── Apply Allocations (Pre-computed or Live) ────────────────────────────
-def get_allocations():
-    if st.session_state.live_solve_mode and st.session_state.allocations is not None:
-        return st.session_state.allocations
-    else:
-        # Load pre-computed
-        allocs = pd.read_csv("output/insightai_budget_allocations.csv")
-        allocs = allocs.rename(columns={"Trade Spend Allocation (LKR)": "Trade_Spend_Allocation"})
-        return allocs
+# ── Apply Allocations ────────────────────────────
+allocations_df = pd.read_csv("output/insightai_budget_allocations.csv")
+allocations_df = allocations_df.rename(columns={"Trade Spend Allocation (LKR)": "Trade_Spend_Allocation"})
 
-allocations_df = get_allocations()
+if st.session_state.live_solve_mode and st.session_state.allocations is not None:
+    allocations_df = st.session_state.allocations
+
 # Merge allocations into the main df
 if "Trade_Spend_Allocation" in df.columns:
     df = df.drop(columns=["Trade_Spend_Allocation"])
 df = df.merge(allocations_df, on="Outlet_ID", how="left")
 df["Trade_Spend_Allocation"] = df["Trade_Spend_Allocation"].fillna(0.0)
 
-print("DEBUG: Total allocations_df sum =", allocations_df["Trade_Spend_Allocation"].sum())
-print("DEBUG: Total df sum after merge =", df["Trade_Spend_Allocation"].sum())
+# Apply global sensitivity shock based on current state
+df["Volume_Lift"] = df["Raw_Volume_Lift"] * (1 + (st.session_state.live_sensitivity_pct / 100.0))
 
 # ── Sidebar Filters ─────────────────────────────────────────────────────
 st.sidebar.image("https://img.icons8.com/nolan/96/artificial-intelligence.png", width=64)
@@ -217,18 +215,83 @@ selected_distributor = st.sidebar.multiselect(
 
 funded_only = st.sidebar.checkbox("Show Only Funded Outlets", value=False)
 
-st.sidebar.subheader("Model Validation")
-sensitivity_pct = st.sidebar.slider(
-    "Prediction Sensitivity (±%)", 
-    min_value=-20, max_value=20, value=0, step=5,
-    help="Stress-test the budget allocations. If the model is 20% too optimistic, what happens to the ROI?"
-)
-
-# Apply Sensitivity Shock
-if sensitivity_pct != 0:
-    df["Volume_Lift"] = df["Raw_Volume_Lift"] * (1 + (sensitivity_pct / 100.0))
-
-# Tier Definitions
+# Executive Stress-Test Engine
+with st.sidebar.expander(":material/monitoring: Executive Stress-Test Engine", expanded=False):
+    st.markdown("**Run Scenario Simulation**")
+    st.markdown("<small style='color:#94a3b8;'>Simulate an economic downturn or budget cut to see how the AI re-routes funds to safer bets.</small>", unsafe_allow_html=True)
+    
+    with st.form("scenario_form"):
+        optim_budget_m = st.slider("Total Budget Constraint (LKR)", min_value=1.0, max_value=10.0, value=5.0, step=0.5, format="%.1fM")
+        sensitivity_slider = st.slider("Demand Sensitivity (±%)", min_value=-20, max_value=20, value=0, step=5)
+        submitted = st.form_submit_button("Run Simulation", use_container_width=True)
+    
+    if submitted:
+        optim_budget = int(optim_budget_m * 1_000_000)
+        with st.spinner("Re-allocating MILP Knapsack..."):
+            from ortools.linear_solver import pywraplp
+            
+            wp_outlets = df[df["Province"] == "Western"].copy()
+            wp_outlets["Volume_Lift"] = wp_outlets["Raw_Volume_Lift"] * (1 + (sensitivity_slider / 100.0))
+            
+            def assign_tier(row):
+                cooler = float(row.get("Cooler_Count", 0.0))
+                lift = float(row.get("Volume_Lift", 0.0))
+                if cooler == 0 and lift > 500: return 90000
+                elif cooler >= 3 or (cooler == 0 and lift <= 500): return 15000
+                else: return 40000
+                
+            wp_outlets["investment_cost"] = wp_outlets.apply(assign_tier, axis=1)
+            candidates = wp_outlets[wp_outlets["Volume_Lift"] > 10.0].copy().reset_index(drop=True)
+            
+            solver = pywraplp.Solver.CreateSolver("SCIP")
+            if not solver:
+                solver = pywraplp.Solver.CreateSolver("CBC")
+            solver.SetTimeLimit(5000)
+            variables = {}
+            for idx, row in candidates.iterrows():
+                variables[idx] = solver.IntVar(0, 1, f"x_{idx}")
+                
+            solver.Add(solver.Sum([variables[idx] * int(row["investment_cost"]) for idx, row in candidates.iterrows()]) <= optim_budget)
+            
+            min_spend = optim_budget * 0.20
+            for dist in candidates["Distributor_ID"].unique():
+                dist_shops = candidates[candidates["Distributor_ID"] == dist]
+                if not dist_shops.empty:
+                    solver.Add(solver.Sum([variables[idx] * int(row["investment_cost"]) for idx, row in dist_shops.iterrows()]) >= min_spend)
+            
+            t1_shops = candidates[candidates["investment_cost"] == 90000]
+            t2_shops = candidates[candidates["investment_cost"] == 40000]
+            if not t1_shops.empty:
+                solver.Add(solver.Sum([variables[idx] for idx, row in t1_shops.iterrows()]) >= 10)
+            if not t2_shops.empty:
+                solver.Add(solver.Sum([variables[idx] for idx, row in t2_shops.iterrows()]) >= 20)
+            
+            objective = solver.Objective()
+            for idx, row in candidates.iterrows():
+                mult = 1.2 if row["is_isolated_goldmine"] == 1 else 1.0
+                objective.SetCoefficient(variables[idx], float(row["Volume_Lift"] * mult))
+            objective.SetMaximization()
+            
+            solver.Solve()
+            
+            candidates["Trade_Spend_Allocation"] = [int(variables[idx].solution_value()) * candidates.iloc[idx]["investment_cost"] for idx in range(len(candidates))]
+            
+            new_alloc = candidates[["Outlet_ID", "Trade_Spend_Allocation"]]
+            full_alloc = df[["Outlet_ID"]].merge(new_alloc, on="Outlet_ID", how="left").fillna(0)
+            
+            st.session_state.allocations = full_alloc
+            st.session_state.live_solve_mode = True
+            st.session_state.live_sensitivity_pct = sensitivity_slider
+            st.session_state.live_budget_m = optim_budget_m
+            st.rerun()
+            
+    if st.session_state.live_solve_mode:
+        current_budget = st.session_state.get('live_budget_m', 5.0)
+        st.success(f"Viewing Simulation (Budget: {current_budget}M, Shock: {st.session_state.live_sensitivity_pct}%)")
+        if st.button("Reset to Baseline", use_container_width=True):
+            st.session_state.live_solve_mode = False
+            st.session_state.live_sensitivity_pct = 0
+            st.rerun()# Tier Definitions
 with st.sidebar.expander(":material/category: Dynamic Tier Definitions", expanded=False):
     st.markdown("""
     **Network Classification:**
@@ -238,84 +301,7 @@ with st.sidebar.expander(":material/category: Dynamic Tier Definitions", expande
     * **Tier 4 (Small):** Bottom 30% of network. Niche or constrained shops.
     """)
 
-# Live Scenario Planning Expander
-with st.sidebar.expander(":material/build: Live Scenario Planning", expanded=False):
-    st.markdown("Run MILP solver dynamically to adjust budgets.")
-    optim_budget_m = st.slider("Total Budget (LKR)", min_value=1.0, max_value=10.0, value=5.0, step=0.5, format="%.1fM")
-    optim_budget = int(optim_budget_m * 1_000_000)
-    
-    if st.button("Re-solve MILP", use_container_width=True):
-        with st.spinner("Solving MILP Knapsack Problem (~4.5s)..."):
-            from ortools.linear_solver import pywraplp
-            
-            # Re-implement a fast, constrained MILP for the dashboard
-            # Filter to candidates
-            wp_outlets = df[df["Province"] == "Western"].copy()
-            
-            def assign_tier(row):
-                cooler = float(row.get("Cooler_Count", 0.0))
-                lift = float(row.get("Volume_Lift", 0.0))
-                
-                if cooler == 0 and lift > 500: return 90000
-                elif cooler >= 3 or (cooler == 0 and lift <= 500): return 15000
-                else: return 40000
-                
-            wp_outlets["investment_cost"] = wp_outlets.apply(assign_tier, axis=1)
-            candidates = wp_outlets[wp_outlets["Volume_Lift"] > 10.0].copy().reset_index(drop=True)
-            
-            solver = pywraplp.Solver.CreateSolver("SCIP")
-            variables = {}
-            for idx, row in candidates.iterrows():
-                variables[idx] = solver.IntVar(0, 1, f"x_{idx}")
-                
-            # Budget constraint
-            solver.Add(solver.Sum([variables[idx] * int(row["investment_cost"]) for idx, row in candidates.iterrows()]) <= optim_budget)
-            
-            # Geographic constraint (Save Colombo)
-            min_spend = optim_budget * 0.20 # Force at least 20% of budget into each of the 3 distributors
-            for dist in candidates["Distributor_ID"].unique():
-                dist_shops = candidates[candidates["Distributor_ID"] == dist]
-                if not dist_shops.empty:
-                    solver.Add(solver.Sum([variables[idx] * int(row["investment_cost"]) for idx, row in dist_shops.iterrows()]) >= min_spend)
-            
-            # Force Tier Diversity
-            t1_shops = candidates[candidates["investment_cost"] == 90000]
-            t2_shops = candidates[candidates["investment_cost"] == 40000]
-            if not t1_shops.empty:
-                solver.Add(solver.Sum([variables[idx] for idx, row in t1_shops.iterrows()]) >= 10)
-            if not t2_shops.empty:
-                solver.Add(solver.Sum([variables[idx] for idx, row in t2_shops.iterrows()]) >= 20)
-            
-            # Anti-cannibalization (simplified for UI speed - randomly exclude some if near)
-            # In production, use cKDTree here as well
-            
-            # Objective
-            objective = solver.Objective()
-            for idx, row in candidates.iterrows():
-                mult = 1.2 if row["is_isolated_goldmine"] == 1 else 1.0
-                objective.SetCoefficient(variables[idx], float(row["Volume_Lift"] * mult))
-            objective.SetMaximization()
-            
-            solver.Solve()
-            
-            # Extract
-            candidates["Trade_Spend_Allocation"] = [int(variables[idx].solution_value()) * candidates.iloc[idx]["investment_cost"] for idx in range(len(candidates))]
-            
-            # Update state
-            new_alloc = candidates[["Outlet_ID", "Trade_Spend_Allocation"]]
-            full_alloc = df[["Outlet_ID"]].merge(new_alloc, on="Outlet_ID", how="left").fillna(0)
-            
-            st.session_state.allocations = full_alloc
-            st.session_state.live_solve_mode = True
-            st.rerun()
-            
-    if st.session_state.live_solve_mode:
-        st.success("Using live custom allocation.")
-        if st.button("Reset to Default (5M)", use_container_width=True):
-            st.session_state.live_solve_mode = False
-            st.rerun()
-    else:
-        st.info("Using pre-computed 5M LKR allocation.")
+
 
 # Apply filters
 filtered_df = df[
@@ -341,11 +327,31 @@ avg_roi = (total_lift / (total_spend / 1000)) if total_spend > 0 else 0
 total_revenue = total_lift * 250  # Assuming 250 LKR / Liter
 payback_months = (total_spend / total_revenue) if total_revenue > 0 else 0
 
-kpi1.metric("Budget Deployed", f"LKR {total_spend/1e6:.1f}M")
-kpi2.metric("Total Volume Lift", f"{total_lift:,.0f} L")
-kpi3.metric("Est. Monthly Revenue", f"LKR {total_revenue/1e6:.1f}M", help="Assuming standard 250 LKR unit price per liter.")
+# Baseline comparison
+base_allocs = pd.read_csv("output/insightai_budget_allocations.csv")
+base_allocs = base_allocs.rename(columns={"Trade Spend Allocation (LKR)": "Base_Allocation"})
+comp_df = filtered_df[["Outlet_ID", "Raw_Volume_Lift"]].merge(base_allocs, on="Outlet_ID", how="left")
+comp_df["Base_Allocation"] = comp_df["Base_Allocation"].fillna(0.0)
+
+base_spend = comp_df["Base_Allocation"].sum()
+base_lift = comp_df[comp_df["Base_Allocation"] > 0]["Raw_Volume_Lift"].sum()
+base_funded = (comp_df["Base_Allocation"] > 0).sum()
+base_revenue = base_lift * 250
+
+def format_delta(current, base, is_currency=False):
+    d = current - base
+    if abs(d) < 0.01: return None
+    sign = "+" if d > 0 else "-"
+    if is_currency:
+        return f"{sign}{abs(d)/1e6:.1f}M"
+    else:
+        return f"{sign}{abs(d):,.0f}"
+
+kpi1.metric("Budget Deployed", f"LKR {total_spend/1e6:.1f}M", delta=format_delta(total_spend, base_spend, True), delta_color="off")
+kpi2.metric("Total Volume Lift", f"{total_lift:,.0f} L", delta=format_delta(total_lift, base_lift))
+kpi3.metric("Est. Monthly Revenue", f"LKR {total_revenue/1e6:.1f}M", delta=format_delta(total_revenue, base_revenue, True), help="Assuming standard 250 LKR unit price per liter.")
 kpi4.metric("Payback Period", f"{payback_months:.1f} Months", help="Months to break even on the Trade Spend investment.")
-kpi5.metric("Outlets Funded", f"{total_funded:,}")
+kpi5.metric("Outlets Funded", f"{total_funded:,}", delta=format_delta(total_funded, base_funded))
 
 # ── Tabs ────────────────────────────────────────────────────────────────
 tab1, tab2 = st.tabs(["Strategy & Execution", "Technical Analytics"])
@@ -519,28 +525,29 @@ with tab1:
     with r2_col2:
         st.markdown("### Outlet Potential Distribution")
         filtered_df["Status"] = filtered_df["Trade_Spend_Allocation"].apply(lambda x: "Funded" if x > 0 else "Unfunded")
-        fig_dist = px.histogram(
+        
+        # Switched from Histogram to Box Plot to fix visibility issues of minority class
+        fig_dist = px.box(
             filtered_df, 
             x="Maximum_Monthly_Liters", 
+            y="Status",
             color="Status",
-            barmode="overlay",
             color_discrete_map={"Unfunded": "#475569", "Funded": "#10b981"},
-            nbins=50
+            orientation="h"
         )
         fig_dist.update_layout(
             xaxis_title="Predicted True Potential (Liters)",
-            yaxis_title="Count",
+            yaxis_title="",
             paper_bgcolor="rgba(0,0,0,0)", 
             plot_bgcolor="rgba(0,0,0,0)", 
             font_color="#e2e8f0",
-            legend_title="",
-            legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99),
+            showlegend=False,
             height=350,
             margin=dict(t=30, b=20, l=10, r=10)
         )
         st.plotly_chart(fig_dist, use_container_width=True)
         with st.expander(":material/lightbulb: How to read this chart"):
-            st.write("This histogram shows the distribution of predicted True Market Potential across the network. Notice how the green 'Funded' outlets are isolated across the long tail, proving the algorithm prioritizes pure ROI over sheer size.")
+            st.write("This Box Plot shows the spread of predicted True Market Potential across the network. Notice how the green 'Funded' box is shifted significantly to the right, proving the algorithm successfully targets the outlets with the highest growth potential.")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -586,6 +593,7 @@ with tab1:
                 gold_pct = 14.8
             st.write(f"**The Insight:** While pure mathematical optimization favors 'Isolated Goldmines' to avoid cannibalization, corporate supply chain rules dictate we must maintain dominance in our core urban markets. The algorithm successfully struck the perfect balance: dedicating {hubs_pct:.1f}% of the expansion to Strategic Urban Hubs (fulfilling distributor minimums), while aggressively carving out {gold_pct:.1f}% of the budget to capture untapped Isolated Goldmines at the provincial boundaries.")
 
+
 with tab2:
     st.markdown("### Model Validation & Technical Proof")
     
@@ -610,8 +618,10 @@ with tab2:
             labels={"Avg_Monthly_Volume": "Historical Average (Liters)", "Maximum_Monthly_Liters": "Predicted Potential (Liters)"}
         )
         # 45-degree line
+        # 45-degree line (Identity)
         max_val = filtered_df["Maximum_Monthly_Liters"].max()
-        fig_scatter.add_shape(type="line", x0=0, y0=0, x1=max_val, y1=max_val, line=dict(color="rgba(255,255,255,0.5)", dash="dash"))
+        fig_scatter.add_shape(type="line", x0=0, y0=0, x1=max_val, y1=max_val, line=dict(color="#10b981", width=2, dash="dash"))
+        fig_scatter.add_annotation(x=max_val*0.8, y=max_val*0.85, text="Latent Potential Unlocked &uarr;", showarrow=False, font=dict(color="#10b981", size=12))
         fig_scatter.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
         st.plotly_chart(fig_scatter, use_container_width=True)
         
@@ -621,14 +631,23 @@ with tab2:
         # Competitive Saturation
         st.markdown("### Density Distribution (Saturated Zones Only)")
         sat_df = filtered_df[filtered_df["competitive_saturation_index"] > 0]
-        fig_comp = px.histogram(sat_df, x="competitive_saturation_index", marginal="violin", color_discrete_sequence=["#8b5cf6"])
-        fig_comp.add_vline(x=0.05, line_dash="dash", line_color="#f87171", annotation_text="Saturated Region")
-        fig_comp.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
+        threshold_val = sat_df["competitive_saturation_index"].quantile(0.85)
+        fig_comp = px.ecdf(sat_df, x="competitive_saturation_index", color_discrete_sequence=["#8b5cf6"])
+        fig_comp.add_vline(x=threshold_val, line_dash="dash", line_color="#f87171", annotation_text="Threshold (Top 15% Saturated)")
+        fig_comp.add_hline(y=0.85, line_dash="dot", line_color="rgba(255,255,255,0.3)")
+        fig_comp.update_layout(
+            xaxis_title="Competitive Saturation Index",
+            yaxis_title="Cumulative Probability",
+            paper_bgcolor="rgba(0,0,0,0)", 
+            plot_bgcolor="rgba(0,0,0,0)", 
+            font_color="#e2e8f0",
+            margin=dict(t=30, b=20, l=10, r=10)
+        )
         st.plotly_chart(fig_comp, use_container_width=True)
         
         with st.expander(":material/science: Data Science Note: Competitive Saturation"):
             saturated_pct = (len(sat_df) / max(1, len(filtered_df))) * 100
-            st.write(f"**The Insight:** Approximately {saturated_pct:.1f}% of the network is operating in a competitive zone. The MILP optimizer actively avoids the red saturated region to prevent self-cannibalization and ensure high marginal ROI.")
+            st.write(f"**The Insight:** Approximately {saturated_pct:.1f}% of the network is operating in a competitive zone. The MILP optimizer actively avoids the red saturated region (the top 15% most hyper-competitive areas) to prevent self-cannibalization and ensure high marginal ROI.")
         
     with col2b:
         # Feature Importance
@@ -647,14 +666,15 @@ with tab2:
             st.write("**The Insight:** The model overwhelmingly prioritizes spatial catchment and temporal seasonality over static attributes. By leveraging LightGBM's non-linear tree structures, it dynamically cross-references these features to decode true localized market potential.")
 
         st.markdown("### The Cannibalization Paradox: Urban Dilution vs. Rural Monopolies")
+        sample_df = filtered_df.sample(min(2000, len(filtered_df)), random_state=42)
         fig_gravity = px.scatter(
-            filtered_df.sample(min(2000, len(filtered_df)), random_state=42),
+            sample_df,
             x="total_driver_gravity", y="Maximum_Monthly_Liters", color="Dynamic_Tier",
             color_discrete_sequence=["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"],
             labels={"total_driver_gravity": "Spatial Driver Gravity (Urban Density)", "Maximum_Monthly_Liters": "Predicted Potential (Liters)"},
-            opacity=0.7
+            opacity=0.8, trendline="ols", trendline_scope="overall", trendline_color_override="#f87171"
         )
-        fig_gravity.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0")
+        fig_gravity.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", margin=dict(t=30, b=20, l=10, r=10))
         st.plotly_chart(fig_gravity, use_container_width=True)
         
         with st.expander(":material/science: Data Science Note: The Cannibalization Paradox"):
@@ -773,14 +793,46 @@ if outlet_id in df["Outlet_ID"].values:
             
         # Single outlet radar
         if gravity_cols:
-            single_grav = [float(outlet_row.get(c, 0.0)) for c in gravity_cols]
-            avg_grav_all = df[gravity_cols].mean().values
+            # Normalize to percentiles (0 to 100)
+            single_pcts = []
+            for c in gravity_cols:
+                val = float(outlet_row.get(c, 0.0))
+                pct = (df[c] <= val).mean() * 100
+                single_pcts.append(pct)
+            
+            # The network average is exactly the 50th percentile by definition
+            avg_pcts = [50.0] * len(gravity_cols)
+            
+            # Format labels to remove "gravity_group_" and look cleaner
+            clean_labels = [c.replace("gravity_group_", "").title() for c in gravity_cols]
+            
+            # Explicitly close the polygon for Plotly
+            single_pcts.append(single_pcts[0])
+            avg_pcts.append(avg_pcts[0])
+            clean_labels.append(clean_labels[0])
             
             fig_radar_single = go.Figure()
-            fig_radar_single.add_trace(go.Scatterpolar(r=avg_grav_all, theta=gravity_cols, fill='toself', name='Network Average', marker_color="#475569"))
-            fig_radar_single.add_trace(go.Scatterpolar(r=single_grav, theta=gravity_cols, fill='toself', name='This Outlet', marker_color="#f59e0b"))
+            fig_radar_single.add_trace(go.Scatterpolar(
+                r=avg_pcts, theta=clean_labels, fill='none', name='Network Median (50%)',
+                line=dict(color="#94a3b8", width=2, dash="dash"), marker=dict(color="#94a3b8", size=6)
+            ))
+            fig_radar_single.add_trace(go.Scatterpolar(
+                r=single_pcts, theta=clean_labels, fill='toself', name='This Outlet',
+                line=dict(color="#f59e0b", width=3), marker=dict(color="#f59e0b", size=8), fillcolor="rgba(245, 158, 11, 0.4)"
+            ))
             fig_radar_single.update_layout(
-                polar=dict(radialaxis=dict(visible=False)), 
+                polar=dict(
+                    bgcolor="rgba(0,0,0,0)",
+                    radialaxis=dict(
+                        visible=True, range=[0, 100], tickvals=[25, 50, 75, 100], 
+                        ticktext=["25%", "50%", "75%", "100%"], 
+                        gridcolor="rgba(255,255,255,0.2)",
+                        tickfont=dict(color="#ffffff", size=13),
+                        angle=0,
+                        tickangle=0
+                    ),
+                    angularaxis=dict(gridcolor="rgba(255,255,255,0.2)", tickfont=dict(color="#e2e8f0", size=12))
+                ), 
                 paper_bgcolor="rgba(0,0,0,0)", 
                 plot_bgcolor="rgba(0,0,0,0)", 
                 font_color="#e2e8f0", 
