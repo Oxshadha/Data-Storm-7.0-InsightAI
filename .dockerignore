@@ -1,0 +1,69 @@
+# ── Git & Version Control ──
+.git
+.gitignore
+.github
+
+# ── Python environments ──
+.venv
+venv
+env
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+
+# ── IDE ──
+.vscode
+.idea
+.DS_Store
+
+# ── Large/unnecessary data ──
+# We ONLY copy the 5 specific files app.py needs (in the Dockerfile)
+# Everything else is excluded to keep the image small
+data/bronze/
+data/silver/transactions_clean.parquet
+data/silver/distributor_seasonality_clean.parquet
+data/silver/holiday_list_clean.parquet
+data/silver/outlet_master_clean.parquet
+data/silver/poi_clean.parquet
+data/silver/rejected/
+Refernce Resources/
+
+# ── Documentation & Reports ──
+Dashboard Images/
+notebooks/
+experiments/
+reports/
+output/report/
+output/plots/
+output/*.pdf
+output/*.md
+output/*.tex
+output/*.aux
+output/*.log
+output/*.out
+*.pdf
+*.md
+!README.md
+
+# ── Scripts not needed at runtime ──
+create_*.py
+debug_*.py
+diagnose_*.py
+evaluate_*.py
+export_*.py
+find_*.py
+generate_*.py
+get_*.py
+test_*.py
+run_pipeline.py
+run_sandbox.py
+
+# ── Logs ──
+logs/
+ai_log/
+*.log
+
+# ── Environment ──
+.env
+.env.example
