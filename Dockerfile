@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # ── Python Dependencies (cached layer) ──────────────────────
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN sed -i '/jupyter/d; /nbformat/d' requirements.txt && pip install --no-cache-dir -r requirements.txt
 
 # ── Application Code ────────────────────────────────────────
 COPY app.py .

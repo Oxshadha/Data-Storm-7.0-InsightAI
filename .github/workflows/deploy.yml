@@ -1,11 +1,11 @@
 # ============================================================
-# 🚀 InsightAI — AWS EC2 Deployment Pipeline
+# InsightAI - AWS EC2 Deployment Pipeline
 # ============================================================
 # Triggers on push to 'dev' branch ONLY.
-# Builds Docker image → pushes to Amazon ECR → deploys to EC2.
+# Builds Docker image -> pushes to Amazon ECR -> deploys to EC2.
 # ============================================================
 
-name: 🚀 Deploy InsightAI to AWS
+name: Deploy InsightAI to AWS
 
 on:
   push:
@@ -18,31 +18,31 @@ env:
 
 jobs:
   build-and-push:
-    name: 🏗️ Build & Push to ECR
+    name: Build and Push to ECR
     runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
-      # ── Checkout Code ──────────────────────────────────────
-      - name: 📥 Checkout repository
+      # -- Checkout Code --------------------------------------
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── AWS Authentication ─────────────────────────────────
-      - name: 🔑 Configure AWS Credentials
+      # -- AWS Authentication ---------------------------------
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # ── ECR Login ──────────────────────────────────────────
-      - name: 🔐 Login to Amazon ECR
+      # -- ECR Login ------------------------------------------
+      - name: Login to Amazon ECR
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      # ── Build & Push ───────────────────────────────────────
-      - name: 🐳 Build, Tag & Push Docker Image
+      # -- Build & Push ---------------------------------------
+      - name: Build, Tag and Push Docker Image
         env:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
@@ -55,28 +55,28 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           
-          echo "✅ Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
   deploy:
-    name: 🚀 Deploy to EC2
+    name: Deploy to EC2
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      # ── AWS Authentication ─────────────────────────────────
-      - name: 🔑 Configure AWS Credentials
+      # -- AWS Authentication ---------------------------------
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # ── ECR Login ──────────────────────────────────────────
-      - name: 🔐 Login to Amazon ECR
+      # -- ECR Login ------------------------------------------
+      - name: Login to Amazon ECR
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      # ── Deploy over SSH ─────────────────────────────────────
-      - name: 🚀 SSH Deploy to EC2
+      # -- Deploy over SSH ------------------------------------
+      - name: SSH Deploy to EC2
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
           EC2_HOST: 13.233.253.78
@@ -94,10 +94,10 @@ jobs:
              docker rm $ECR_REPOSITORY || true && \
              docker run -d --name $ECR_REPOSITORY --restart unless-stopped -p 8501:8501 -e GEMINI_API_KEY='${{ secrets.GEMINI_API_KEY }}' $ECR_REGISTRY/$ECR_REPOSITORY:latest"
 
-      # ── Summary ────────────────────────────────────────────
-      - name: 📋 Deployment Summary
+      # -- Summary --------------------------------------------
+      - name: Deployment Summary
         run: |
-          echo "### 🚀 InsightAI EC2 Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "### InsightAI EC2 Deployment Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Detail | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
