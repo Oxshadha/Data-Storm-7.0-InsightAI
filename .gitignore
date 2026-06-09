@@ -48,3 +48,6 @@ env/
 
 output/QA_CheatSheet.md
 video_script.md
+
+# ── Deploy Keys ──
+.insightai-deploy-key.pem

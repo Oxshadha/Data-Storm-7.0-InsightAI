@@ -21,3 +21,4 @@ python-dotenv>=1.0.0
 
 shap>=0.40.0
 matplotlib>=3.5.0
+statsmodels>=0.14.0

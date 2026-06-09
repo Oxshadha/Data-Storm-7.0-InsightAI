@@ -1,8 +1,8 @@
 # ============================================================
-# 🚀 InsightAI — AWS Deployment Pipeline
+# 🚀 InsightAI — AWS EC2 Deployment Pipeline
 # ============================================================
 # Triggers on push to 'dev' branch ONLY.
-# Builds Docker image → pushes to Amazon ECR → App Runner auto-deploys.
+# Builds Docker image → pushes to Amazon ECR → deploys to EC2.
 # ============================================================
 
 name: 🚀 Deploy InsightAI to AWS
@@ -14,6 +14,7 @@ on:
 
 env:
   ECR_REPOSITORY: insightai-dashboard
+  AWS_REGION: ap-south-1
 
 jobs:
   build-and-push:
@@ -33,7 +34,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       # ── ECR Login ──────────────────────────────────────────
       - name: 🔐 Login to Amazon ECR
@@ -56,18 +57,54 @@ jobs:
           
           echo "✅ Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-      # ── Summary ────────────────────────────────────────────
-      - name: 📋 Deployment Summary
+  deploy:
+    name: 🚀 Deploy to EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      # ── AWS Authentication ─────────────────────────────────
+      - name: 🔑 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ── ECR Login ──────────────────────────────────────────
+      - name: 🔐 Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ── Deploy over SSH ─────────────────────────────────────
+      - name: 🚀 SSH Deploy to EC2
         env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ubuntu
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
         run: |
-          echo "### 🚀 InsightAI Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $EC2_USERNAME@$EC2_HOST \
+            "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $ECR_REGISTRY && \
+             docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest && \
+             docker stop $ECR_REPOSITORY || true && \
+             docker rm $ECR_REPOSITORY || true && \
+             docker run -d --name $ECR_REPOSITORY --restart unless-stopped -p 8501:8501 -e GEMINI_API_KEY='${{ secrets.GEMINI_API_KEY }}' $ECR_REGISTRY/$ECR_REPOSITORY:latest"
+
+      # ── Summary ────────────────────────────────────────────
+      - name: 📋 Deployment Summary
+        run: |
+          echo "### 🚀 InsightAI EC2 Deployment Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Detail | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Image** | \`$ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **EC2 Host** | \`${{ secrets.EC2_HOST }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Port** | \`8501\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **URL** | http://${{ secrets.EC2_HOST }}:8501 |" >> $GITHUB_STEP_SUMMARY
           echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> App Runner will auto-deploy within ~2 minutes" >> $GITHUB_STEP_SUMMARY
+          echo "> The new application container is now running on the EC2 instance!" >> $GITHUB_STEP_SUMMARY
