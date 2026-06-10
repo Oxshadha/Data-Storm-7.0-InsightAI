@@ -87,12 +87,31 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $EC2_USERNAME@$EC2_HOST \
-            "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $ECR_REGISTRY && \
-             docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest && \
-             docker stop $ECR_REPOSITORY || true && \
-             docker rm $ECR_REPOSITORY || true && \
-             docker run -d --name $ECR_REPOSITORY --restart unless-stopped -p 8501:8501 -e GEMINI_API_KEY='${{ secrets.GEMINI_API_KEY }}' $ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $EC2_USERNAME@$EC2_HOST "
+            set -e
+            aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+            
+            echo 'Disk space before prune:'
+            df -h
+            
+            echo 'Pruning unused Docker assets...'
+            docker system prune -af
+            
+            echo 'Disk space after prune:'
+            df -h
+            
+            echo 'Pulling latest image...'
+            docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
+            
+            echo 'Stopping existing container...'
+            docker stop $ECR_REPOSITORY 2>/dev/null || true
+            
+            echo 'Removing existing container...'
+            docker rm $ECR_REPOSITORY 2>/dev/null || true
+            
+            echo 'Starting new container...'
+            docker run -d --name $ECR_REPOSITORY --restart unless-stopped -p 8501:8501 -e GEMINI_API_KEY='${{ secrets.GEMINI_API_KEY }}' $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          "
 
       # -- Summary --------------------------------------------
       - name: Deployment Summary
