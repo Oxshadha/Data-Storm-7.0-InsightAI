@@ -101,6 +101,11 @@ The dashboard features an Outlet Drill-Down panel powered by a hybrid explanatio
   ```
 * **Offline Fallback (Rule-Based Engine):** If you do not have an API key, or if you are running in an offline environment, the app **will not break**. It will automatically fall back to a dynamic, rule-based text generator that provides a professional narrative based on the outlet's mathematical context.
 
+### 5. Production AWS Deployment (HTTPS)
+Our executive dashboard is deployed in production on AWS EC2 (`t3.small`) using a fully automated Git-triggered CI/CD pipeline.
+* **Production Web App:** **[https://datastrom.duckdns.org](https://datastrom.duckdns.org)** (HTTPS secured via Let's Encrypt / Certbot)
+* **CI/CD Pipeline:** Configured in [.github/workflows/deploy.yml](file:///Users/oneionei/MyProjects/DataStrom/Data-Storm-7.0-InsightAI/.github/workflows/deploy.yml) on the `dev` branch. Pushing to `dev` builds the production Docker image, pushes it to Amazon ECR, and automatically triggers an SSH rolling deploy to the EC2 host.
+
 ---
 
 ## 🔬 The Analytical Pipeline: From EDA to Prediction
