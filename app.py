@@ -667,13 +667,36 @@ with tab2:
 
         st.markdown("### The Cannibalization Paradox: Urban Dilution vs. Rural Monopolies")
         sample_df = filtered_df.sample(min(2000, len(filtered_df)), random_state=42)
-        fig_gravity = px.scatter(
-            sample_df,
-            x="total_driver_gravity", y="Maximum_Monthly_Liters", color="Dynamic_Tier",
-            color_discrete_sequence=["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"],
-            labels={"total_driver_gravity": "Spatial Driver Gravity (Urban Density)", "Maximum_Monthly_Liters": "Predicted Potential (Liters)"},
-            opacity=0.8, trendline="ols", trendline_scope="overall", trendline_color_override="#f87171"
-        )
+        
+        # Safely plot the gravity scatter plot
+        if sample_df.empty or len(sample_df) < 2:
+            # If the DataFrame is empty or doesn't have enough points for regression, avoid trendline to prevent Plotly crashes
+            fig_gravity = px.scatter(
+                sample_df,
+                x="total_driver_gravity", y="Maximum_Monthly_Liters", color="Dynamic_Tier",
+                color_discrete_sequence=["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"],
+                labels={"total_driver_gravity": "Spatial Driver Gravity (Urban Density)", "Maximum_Monthly_Liters": "Predicted Potential (Liters)"},
+                opacity=0.8
+            )
+        else:
+            try:
+                fig_gravity = px.scatter(
+                    sample_df,
+                    x="total_driver_gravity", y="Maximum_Monthly_Liters", color="Dynamic_Tier",
+                    color_discrete_sequence=["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"],
+                    labels={"total_driver_gravity": "Spatial Driver Gravity (Urban Density)", "Maximum_Monthly_Liters": "Predicted Potential (Liters)"},
+                    opacity=0.8, trendline="ols", trendline_scope="overall", trendline_color_override="#f87171"
+                )
+            except Exception:
+                # Fallback to no trendline if OLS fitting fails (e.g., statsmodels error or version-specific Plotly issue)
+                fig_gravity = px.scatter(
+                    sample_df,
+                    x="total_driver_gravity", y="Maximum_Monthly_Liters", color="Dynamic_Tier",
+                    color_discrete_sequence=["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"],
+                    labels={"total_driver_gravity": "Spatial Driver Gravity (Urban Density)", "Maximum_Monthly_Liters": "Predicted Potential (Liters)"},
+                    opacity=0.8
+                )
+        
         fig_gravity.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", margin=dict(t=30, b=20, l=10, r=10))
         st.plotly_chart(fig_gravity, use_container_width=True)
         

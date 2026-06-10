@@ -41,6 +41,10 @@ COPY output/insightai_predictions.csv output/insightai_predictions.csv
 COPY output/insightai_budget_allocations.csv output/insightai_budget_allocations.csv
 COPY output/lgbm_feature_importances.csv output/lgbm_feature_importances.csv
 
+# ── Run Unit Tests (CI/CD Pipeline Validation) ────────────────
+COPY tests/ tests/
+RUN python3 -m unittest discover -s tests -p "test_*.py" && rm -rf tests/
+
 # ── Streamlit Configuration ─────────────────────────────────
 RUN mkdir -p /root/.streamlit
 RUN printf '[server]\n\
