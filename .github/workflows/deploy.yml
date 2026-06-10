@@ -79,7 +79,7 @@ jobs:
       - name: SSH Deploy to EC2
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          EC2_HOST: 13.233.253.78
+          EC2_HOST: 13.204.67.47
           EC2_USERNAME: ubuntu
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
         run: |
@@ -101,9 +101,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Detail | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| **EC2 Host** | \`13.233.253.78\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **EC2 Host** | \`13.204.67.47\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Port** | \`8501\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **URL** | http://13.233.253.78:8501 |" >> $GITHUB_STEP_SUMMARY
+          echo "| **URL** | http://13.204.67.47:8501 |" >> $GITHUB_STEP_SUMMARY
           echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
